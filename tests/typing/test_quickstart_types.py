@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal, assert_type
 
-from quater import App, AuthContext, AuthRequest, Request, Response
+from quater import AuthContext, AuthRequest, Quater, Request, Response
 
 
 async def authenticate(ctx: AuthRequest) -> AuthContext | None:
@@ -12,8 +12,7 @@ async def authenticate(ctx: AuthRequest) -> AuthContext | None:
     return AuthContext(subject="demo-user")
 
 
-app = App(
-    auth=authenticate,
+app = Quater(
     mcp_enabled=True,
     mcp_allowed_origins=["http://localhost:3000"],
 )
@@ -24,7 +23,7 @@ async def health() -> dict[str, bool]:
     return {"ok": True}
 
 
-@app.get("/users/{id:int}", tool=True)
+@app.get("/users/{id:int}", tool=True, auth=authenticate)
 async def get_user(id: int, request: Request) -> dict[str, object]:
     assert_type(id, int)
     assert_type(request.context.source, Literal["api", "tool"])

@@ -3,7 +3,7 @@ from __future__ import annotations
 import msgspec
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 
 
 class CreateUser(msgspec.Struct):
@@ -13,7 +13,7 @@ class CreateUser(msgspec.Struct):
 
 @pytest.mark.asyncio
 async def test_query_params_are_converted_and_defaults_are_applied() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/search")
     async def search(q: str, page: int = 1, active: bool = False) -> dict[str, object]:
@@ -29,7 +29,7 @@ async def test_query_params_are_converted_and_defaults_are_applied() -> None:
 
 @pytest.mark.asyncio
 async def test_missing_required_query_param_returns_validation_error() -> None:
-    app = App()
+    app = Quater()
     calls = 0
 
     @app.get("/search")
@@ -48,7 +48,7 @@ async def test_missing_required_query_param_returns_validation_error() -> None:
 
 @pytest.mark.asyncio
 async def test_json_body_is_bound_to_typed_struct() -> None:
-    app = App()
+    app = Quater()
 
     @app.post("/users")
     async def create_user(user: CreateUser) -> dict[str, object]:
@@ -64,7 +64,7 @@ async def test_json_body_is_bound_to_typed_struct() -> None:
 
 @pytest.mark.asyncio
 async def test_invalid_json_body_rejects_before_handler_execution() -> None:
-    app = App()
+    app = Quater()
     calls = 0
 
     @app.post("/users")

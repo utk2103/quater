@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 
 
 @pytest.mark.asyncio
@@ -15,7 +15,7 @@ async def test_content_length_over_limit_fails_before_body_reader_and_handler() 
         reader_calls += 1
         return b"too large"
 
-    app = App(max_body_size=4)
+    app = Quater(max_body_size=4)
 
     @app.post("/upload")
     async def upload(request: Request) -> dict[str, int]:
@@ -40,7 +40,7 @@ async def test_content_length_over_limit_fails_before_body_reader_and_handler() 
 
 @pytest.mark.asyncio
 async def test_body_reader_limit_uses_app_config_when_length_is_unknown() -> None:
-    app = App(max_body_size=4)
+    app = Quater(max_body_size=4)
 
     @app.post("/upload")
     async def upload(request: Request) -> dict[str, int]:
@@ -56,7 +56,7 @@ async def test_body_reader_limit_uses_app_config_when_length_is_unknown() -> Non
 
 @pytest.mark.asyncio
 async def test_malformed_content_length_is_a_safe_request_error() -> None:
-    app = App(max_body_size=4)
+    app = Quater(max_body_size=4)
 
     @app.post("/upload")
     async def upload() -> dict[str, bool]:

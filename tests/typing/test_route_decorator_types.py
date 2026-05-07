@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Awaitable, Callable
 
-from quater import App, Request, Response
+from quater import Quater, Request, Response
 
-app = App()
+app = Quater()
 
 
 @app.get("/users/{id:int}")

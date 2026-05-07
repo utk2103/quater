@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import msgspec
 
-from quater import App
+from quater import Quater
 from quater.tools.registry import build_tool_registry
 
 
@@ -17,7 +17,7 @@ class CancelReason(msgspec.Struct):
 
 
 def test_tool_schema_includes_path_query_and_body_parameters() -> None:
-    app = App()
+    app = Quater()
 
     @app.post("/orders/{id:int}/cancel", tool=True)
     async def cancel_order(
@@ -47,7 +47,7 @@ def test_tool_schema_includes_path_query_and_body_parameters() -> None:
 
 
 def test_tool_list_payload_uses_generated_input_schema() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/users/{id:int}", tool=True)
     async def get_user(id: int, include_email: bool = False) -> dict[str, object]:

@@ -99,6 +99,9 @@ class Router:
 
     async def dispatch(self, request: Request) -> Response:
         match = self.match(request.method, request.path)
+        return await self.dispatch_match(request, match)
+
+    async def dispatch_match(self, request: Request, match: Match) -> Response:
         if match.route is None:
             return await self._fallback_pipeline(request, {})
 

@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App, HTTPError, Request, Response, TextResponse
+from quater import HTTPError, Quater, Request, Response, TextResponse
 from quater.exceptions import MiddlewareStateError
 from quater.middleware import ExceptionHandlerEntry
 
 
 @pytest.mark.asyncio
 async def test_http_error_maps_to_safe_response() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/missing")
     async def handler() -> dict[str, bool]:
@@ -23,7 +23,7 @@ async def test_http_error_maps_to_safe_response() -> None:
 
 @pytest.mark.asyncio
 async def test_custom_exception_handler_maps_route_error() -> None:
-    app = App()
+    app = Quater()
 
     @app.exception_handler(ValueError)
     async def handle_value_error(request: Request, exc: Exception) -> Response | None:
@@ -41,7 +41,7 @@ async def test_custom_exception_handler_maps_route_error() -> None:
 
 @pytest.mark.asyncio
 async def test_route_exception_handler_runs_before_global_handler() -> None:
-    app = App()
+    app = Quater()
 
     @app.exception_handler(ValueError)
     async def global_handler(request: Request, exc: Exception) -> Response | None:
@@ -65,7 +65,7 @@ async def test_route_exception_handler_runs_before_global_handler() -> None:
 
 @pytest.mark.asyncio
 async def test_exception_handler_failure_becomes_default_error_response() -> None:
-    app = App()
+    app = Quater()
 
     @app.exception_handler(ValueError)
     async def broken_handler(request: Request, exc: Exception) -> Response | None:
@@ -83,7 +83,7 @@ async def test_exception_handler_failure_becomes_default_error_response() -> Non
 
 @pytest.mark.asyncio
 async def test_after_middleware_runs_for_mapped_exception_responses() -> None:
-    app = App()
+    app = Quater()
 
     @app.after_response
     async def add_header(request: Request, response: Response) -> Response:
@@ -101,7 +101,7 @@ async def test_after_middleware_runs_for_mapped_exception_responses() -> None:
 
 
 def test_global_middleware_cannot_be_registered_after_compile() -> None:
-    app = App()
+    app = Quater()
     app.compile_routes()
 
     async def middleware(request: Request) -> Response | None:

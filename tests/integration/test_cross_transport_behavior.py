@@ -7,7 +7,7 @@ from typing import Any, cast
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 from quater.adapters.asgi import ASGIMessage
 from quater.adapters.wsgi import WSGIEnvironment
 from quater.typing import AuthContext, AuthRequest
@@ -77,7 +77,7 @@ class RSGIStreamTransport:
 
 
 async def asgi_response(
-    app: App,
+    app: Quater,
     *,
     host: str,
     authorization: str,
@@ -122,7 +122,7 @@ async def asgi_response(
 
 
 def wsgi_response(
-    app: App,
+    app: Quater,
     *,
     host: str,
     authorization: str,
@@ -158,7 +158,7 @@ def wsgi_response(
 
 
 async def rsgi_response(
-    app: App,
+    app: Quater,
     *,
     host: str,
     authorization: str,
@@ -178,7 +178,7 @@ async def rsgi_response(
     return protocol.status, dict(protocol.headers), protocol.body
 
 
-def make_app(auth_subjects: list[str], handler_calls: list[str]) -> App:
+def make_app(auth_subjects: list[str], handler_calls: list[str]) -> Quater:
     async def authenticate(ctx: AuthRequest) -> AuthContext | None:
         subject = ctx.headers.get("authorization")
         if subject is None:
@@ -186,9 +186,9 @@ def make_app(auth_subjects: list[str], handler_calls: list[str]) -> App:
         auth_subjects.append(subject)
         return AuthContext(subject=subject)
 
-    app = App(auth=authenticate, allowed_hosts=["api.example.com"])
+    app = Quater(allowed_hosts=["api.example.com"])
 
-    @app.get("/me")
+    @app.get("/me", auth=authenticate)
     async def me(request: Request) -> dict[str, str]:
         assert request.auth is not None
         handler_calls.append(request.auth.subject)

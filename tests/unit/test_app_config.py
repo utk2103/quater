@@ -4,7 +4,7 @@ from dataclasses import FrozenInstanceError
 
 import pytest
 
-from quater import App
+from quater import Quater
 from quater.config import AppConfig
 from quater.exceptions import ConfigurationError
 from quater.request import Request
@@ -13,7 +13,7 @@ from quater.response import Response
 
 def test_app_config_copies_mutable_inputs() -> None:
     allowed_hosts = ["api.example.com"]
-    app = App(allowed_hosts=allowed_hosts, trusted_proxies=["127.0.0.1"])
+    app = Quater(allowed_hosts=allowed_hosts, trusted_proxies=["127.0.0.1"])
 
     allowed_hosts.append("evil.example.com")
 
@@ -22,7 +22,7 @@ def test_app_config_copies_mutable_inputs() -> None:
 
 
 def test_app_config_is_immutable_after_creation() -> None:
-    app = App(debug=True)
+    app = Quater(debug=True)
     field_name = "debug"
 
     with pytest.raises(FrozenInstanceError):
@@ -33,7 +33,7 @@ def test_app_config_is_immutable_after_creation() -> None:
 
 def test_app_config_overrides_do_not_mutate_base_config() -> None:
     base = AppConfig(allowed_hosts=("api.example.com",))
-    app = App(config=base, allowed_hosts=["admin.example.com"], max_body_size="2mb")
+    app = Quater(config=base, allowed_hosts=["admin.example.com"], max_body_size="2mb")
 
     assert base.allowed_hosts == ("api.example.com",)
     assert base.max_body_size == 2 * 1024 * 1024
@@ -42,13 +42,14 @@ def test_app_config_overrides_do_not_mutate_base_config() -> None:
 
 
 def test_secure_defaults_are_represented_before_enforcement_exists() -> None:
-    app = App()
+    app = Quater()
 
     assert app.config.debug is False
     assert app.config.security == "strict"
     assert app.config.allowed_hosts == ()
     assert app.config.trusted_proxies == ()
     assert app.config.max_body_size == 2 * 1024 * 1024
+    assert app.config.request_logging is True
     assert app.config.cors is None
     assert app.config.content_security_policy is None
     assert app.config.mcp_enabled is False
@@ -59,28 +60,28 @@ def test_secure_defaults_are_represented_before_enforcement_exists() -> None:
 @pytest.mark.parametrize("value", ["", "2", "mb", "2tb", "-1mb"])
 def test_invalid_body_size_strings_fail_early(value: str) -> None:
     with pytest.raises(ConfigurationError):
-        App(max_body_size=value)
+        Quater(max_body_size=value)
 
 
 @pytest.mark.parametrize("path", ["mcp", "/mcp?debug=true", "/mcp#tools"])
 def test_invalid_mcp_paths_fail_early(path: str) -> None:
     with pytest.raises(ConfigurationError):
-        App(mcp_path=path)
+        Quater(mcp_path=path)
 
 
 def test_trusted_proxies_must_be_ip_addresses_or_networks() -> None:
     with pytest.raises(ConfigurationError):
-        App(trusted_proxies=["proxy.internal"])
+        Quater(trusted_proxies=["proxy.internal"])
 
 
 def test_empty_content_security_policy_fails_early() -> None:
     with pytest.raises(ConfigurationError):
-        App(content_security_policy=" ")
+        Quater(content_security_policy=" ")
 
 
 @pytest.mark.asyncio
 async def test_unknown_request_returns_framework_response_object() -> None:
-    response = await App().handle(Request(method="GET", path="/missing"))
+    response = await Quater().handle(Request(method="GET", path="/missing"))
 
     assert isinstance(response, Response)
     assert response.status_code == 404
@@ -94,7 +95,7 @@ def test_route_metadata_can_be_registered_without_compiling_routes() -> None:
     async def handler() -> dict[str, bool]:
         return {"ok": True}
 
-    app = App()
+    app = Quater()
     route = app.add_route("get", "/health", handler, tool=True)
 
     assert app.routes == (route,)
@@ -103,3 +104,4 @@ def test_route_metadata_can_be_registered_without_compiling_routes() -> None:
     assert route.handler is handler
     assert route.name == "handler"
     assert route.tool is True
+    assert route.auth is None

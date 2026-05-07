@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 
 
 @pytest.mark.asyncio
 async def test_unexpected_errors_are_sanitized_by_default() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/boom")
     async def handler() -> dict[str, bool]:
@@ -21,7 +21,7 @@ async def test_unexpected_errors_are_sanitized_by_default() -> None:
 
 @pytest.mark.asyncio
 async def test_debug_errors_include_exception_type_and_message() -> None:
-    app = App(debug=True)
+    app = Quater(debug=True)
 
     @app.get("/boom")
     async def handler() -> dict[str, bool]:

@@ -9,11 +9,11 @@ from typing import Protocol, cast
 
 import pytest
 
-from quater import App, Request, Response
+from quater import Quater, Request, Response
 
 
 class ExampleModule(Protocol):
-    app: App
+    app: Quater
 
 
 REPO_ROOT = pathlib.Path(__file__).resolve().parents[2]

@@ -5,7 +5,7 @@ import json
 import msgspec
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 
 
 class CreateUser(msgspec.Struct):
@@ -14,7 +14,7 @@ class CreateUser(msgspec.Struct):
 
 
 async def mcp_call(
-    app: App,
+    app: Quater,
     *,
     name: str,
     arguments: dict[str, object],
@@ -51,7 +51,7 @@ def require_object_list(value: object) -> list[dict[str, object]]:
 
 @pytest.mark.asyncio
 async def test_tools_call_invokes_handler_with_tool_request_context() -> None:
-    app = App(mcp_enabled=True)
+    app = Quater(mcp_enabled=True)
 
     @app.get("/users/{id:int}", tool=True)
     async def get_user(id: int, request: Request) -> dict[str, object]:
@@ -72,7 +72,7 @@ async def test_tools_call_invokes_handler_with_tool_request_context() -> None:
 
 @pytest.mark.asyncio
 async def test_normal_api_call_keeps_api_request_context() -> None:
-    app = App(mcp_enabled=True)
+    app = Quater(mcp_enabled=True)
 
     @app.get("/users/{id:int}", tool=True)
     async def get_user(id: int, request: Request) -> dict[str, object]:
@@ -85,7 +85,7 @@ async def test_normal_api_call_keeps_api_request_context() -> None:
 
 @pytest.mark.asyncio
 async def test_tools_call_binds_body_model_from_arguments() -> None:
-    app = App(mcp_enabled=True)
+    app = Quater(mcp_enabled=True)
 
     @app.post("/users", tool=True)
     async def create_user(user: CreateUser) -> dict[str, object]:
@@ -107,7 +107,7 @@ async def test_tools_call_binds_body_model_from_arguments() -> None:
 @pytest.mark.asyncio
 async def test_unknown_tool_returns_json_rpc_error() -> None:
     status, body = await mcp_call(
-        App(mcp_enabled=True),
+        Quater(mcp_enabled=True),
         name="missing",
         arguments={},
     )
@@ -118,7 +118,7 @@ async def test_unknown_tool_returns_json_rpc_error() -> None:
 
 @pytest.mark.asyncio
 async def test_invalid_tool_arguments_do_not_call_handler() -> None:
-    app = App(mcp_enabled=True)
+    app = Quater(mcp_enabled=True)
     calls = 0
 
     @app.get("/users/{id:int}", tool=True)
@@ -136,7 +136,7 @@ async def test_invalid_tool_arguments_do_not_call_handler() -> None:
 
 @pytest.mark.asyncio
 async def test_handler_error_becomes_tool_result_error() -> None:
-    app = App(mcp_enabled=True)
+    app = Quater(mcp_enabled=True)
 
     @app.get("/boom", tool=True)
     async def boom() -> dict[str, bool]:

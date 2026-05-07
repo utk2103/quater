@@ -5,7 +5,7 @@ from typing import Any, cast
 
 import pytest
 
-from quater import App, Request, StreamResponse
+from quater import Quater, Request, StreamResponse
 from quater.adapters.asgi import ASGIAdapter, ASGIMessage
 
 
@@ -48,7 +48,7 @@ def response_headers(messages: list[dict[str, object]]) -> dict[str, str]:
 
 @pytest.mark.asyncio
 async def test_asgi_multiple_body_chunks_reach_handler_without_loss() -> None:
-    app = App()
+    app = Quater()
 
     @app.post("/echo")
     async def echo(request: Request) -> bytes:
@@ -77,7 +77,7 @@ async def test_asgi_multiple_body_chunks_reach_handler_without_loss() -> None:
 
 @pytest.mark.asyncio
 async def test_asgi_stream_response_uses_multiple_body_messages() -> None:
-    app = App()
+    app = Quater()
 
     async def chunks() -> AsyncIterator[bytes]:
         yield b"a"
@@ -110,7 +110,7 @@ async def test_asgi_stream_response_uses_multiple_body_messages() -> None:
 
 @pytest.mark.asyncio
 async def test_asgi_lifespan_runs_startup_and_shutdown_once() -> None:
-    app = App()
+    app = Quater()
     calls: list[str] = []
 
     @app.on_startup
@@ -139,7 +139,7 @@ async def test_asgi_lifespan_runs_startup_and_shutdown_once() -> None:
 
 @pytest.mark.asyncio
 async def test_asgi_websocket_scope_closes_without_entering_router() -> None:
-    app = App()
+    app = Quater()
     calls = 0
 
     @app.get("/ws")

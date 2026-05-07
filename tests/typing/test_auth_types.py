@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import assert_type
 
-from quater import App, Request
+from quater import Quater, Request
 from quater.cookies import SignedCookieSigner
 from quater.cors import CORSConfig
 from quater.typing import AuthContext, Authenticate, AuthRequest
@@ -21,11 +21,16 @@ async def authenticate(ctx: AuthRequest) -> AuthContext | None:
 
 cors = CORSConfig(allowed_origins=("https://app.example.com",))
 authenticator: Authenticate = authenticate
-app = App(
-    auth=authenticator,
+app = Quater(
     cors=cors,
     content_security_policy="default-src 'self'",
 )
+
+
+@app.get("/me", auth=authenticator)
+async def me(request: Request) -> dict[str, str]:
+    assert request.auth is not None
+    return {"subject": request.auth.subject}
 request = Request(
     method="GET",
     path="/me",

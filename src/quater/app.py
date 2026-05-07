@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 from collections.abc import Callable, Iterable
+from time import perf_counter
 from typing import TYPE_CHECKING, Any, TypeVar
 
+from quater.access_log import build_access_log_record, log_access
 from quater.auth import authenticate_request
 from quater.config import AppConfig, MaxBodySize, SecurityMode
 from quater.core import Handler, RouteDefinition
@@ -41,11 +43,10 @@ if TYPE_CHECKING:
     from quater.tools.registry import ToolRegistry
 
 
-class App:
+class Quater:
     """Central Quater application object."""
 
     __slots__ = (
-        "auth",
         "config",
         "mcp_audit",
         "name",
@@ -62,12 +63,12 @@ class App:
         *,
         name: str | None = None,
         config: AppConfig | None = None,
-        auth: Authenticate | None = None,
         debug: bool | None = None,
         security: SecurityMode | None = None,
         allowed_hosts: Iterable[str] | None = None,
         trusted_proxies: Iterable[str] | None = None,
         max_body_size: MaxBodySize | None = None,
+        request_logging: bool | None = None,
         cors: CORSConfig | None = None,
         content_security_policy: str | None = None,
         mcp_enabled: bool | None = None,
@@ -82,13 +83,13 @@ class App:
             allowed_hosts=allowed_hosts,
             trusted_proxies=trusted_proxies,
             max_body_size=max_body_size,
+            request_logging=request_logging,
             cors=cors,
             content_security_policy=content_security_policy,
             mcp_enabled=mcp_enabled,
             mcp_path=mcp_path,
             mcp_allowed_origins=mcp_allowed_origins,
         )
-        self.auth = auth
         self.mcp_audit = mcp_audit
         self._lifespan = LifespanManager()
         self._middleware = MiddlewareStack()
@@ -133,6 +134,7 @@ class App:
         *,
         name: str | None = None,
         tool: bool = False,
+        auth: Authenticate | None = None,
         metadata: dict[str, Any] | None = None,
         before: Iterable[BeforeMiddleware] = (),
         after: Iterable[AfterMiddleware] = (),
@@ -154,6 +156,7 @@ class App:
             handler=handler,
             name=route_name,
             tool=tool,
+            auth=auth,
             metadata=dict(metadata or {}),
             middleware=MiddlewareStack.from_parts(
                 before=before,
@@ -174,6 +177,7 @@ class App:
         *,
         name: str | None = None,
         tool: bool = False,
+        auth: Authenticate | None = None,
         metadata: dict[str, Any] | None = None,
         before: Iterable[BeforeMiddleware] = (),
         after: Iterable[AfterMiddleware] = (),
@@ -189,6 +193,7 @@ class App:
                 handler,
                 name=name,
                 tool=tool,
+                auth=auth,
                 metadata=metadata,
                 before=before,
                 after=after,
@@ -205,6 +210,7 @@ class App:
         *,
         name: str | None = None,
         tool: bool = False,
+        auth: Authenticate | None = None,
         metadata: dict[str, Any] | None = None,
         before: Iterable[BeforeMiddleware] = (),
         after: Iterable[AfterMiddleware] = (),
@@ -216,6 +222,7 @@ class App:
             path,
             name=name,
             tool=tool,
+            auth=auth,
             metadata=metadata,
             before=before,
             after=after,
@@ -229,6 +236,7 @@ class App:
         *,
         name: str | None = None,
         tool: bool = False,
+        auth: Authenticate | None = None,
         metadata: dict[str, Any] | None = None,
         before: Iterable[BeforeMiddleware] = (),
         after: Iterable[AfterMiddleware] = (),
@@ -240,6 +248,7 @@ class App:
             path,
             name=name,
             tool=tool,
+            auth=auth,
             metadata=metadata,
             before=before,
             after=after,
@@ -253,6 +262,7 @@ class App:
         *,
         name: str | None = None,
         tool: bool = False,
+        auth: Authenticate | None = None,
         metadata: dict[str, Any] | None = None,
         before: Iterable[BeforeMiddleware] = (),
         after: Iterable[AfterMiddleware] = (),
@@ -264,6 +274,7 @@ class App:
             path,
             name=name,
             tool=tool,
+            auth=auth,
             metadata=metadata,
             before=before,
             after=after,
@@ -277,6 +288,7 @@ class App:
         *,
         name: str | None = None,
         tool: bool = False,
+        auth: Authenticate | None = None,
         metadata: dict[str, Any] | None = None,
         before: Iterable[BeforeMiddleware] = (),
         after: Iterable[AfterMiddleware] = (),
@@ -288,6 +300,7 @@ class App:
             path,
             name=name,
             tool=tool,
+            auth=auth,
             metadata=metadata,
             before=before,
             after=after,
@@ -301,6 +314,7 @@ class App:
         *,
         name: str | None = None,
         tool: bool = False,
+        auth: Authenticate | None = None,
         metadata: dict[str, Any] | None = None,
         before: Iterable[BeforeMiddleware] = (),
         after: Iterable[AfterMiddleware] = (),
@@ -312,6 +326,7 @@ class App:
             path,
             name=name,
             tool=tool,
+            auth=auth,
             metadata=metadata,
             before=before,
             after=after,
@@ -414,6 +429,19 @@ class App:
     async def handle(self, request: Request) -> Response:
         """Handle a normalized request through the core dispatcher."""
 
+        started = perf_counter()
+        response = await self._handle_request(request)
+        if self.config.request_logging:
+            log_access(
+                build_access_log_record(
+                    request,
+                    response,
+                    duration_ms=(perf_counter() - started) * 1000,
+                )
+            )
+        return response
+
+    async def _handle_request(self, request: Request) -> Response:
         context = resolve_request_security_context(request, self.config)
         is_mcp_request = (
             self.config.mcp_enabled and request.path == self.config.mcp_path
@@ -425,8 +453,11 @@ class App:
 
                 validate_mcp_origin(request, self.config)
                 request.context = await mcp_request_context(request)
-            if self.auth is not None:
-                await authenticate_request(self.auth, request)
+            if not is_mcp_request:
+                router = self._compiled_router()
+                match = router.match(request.method, request.path)
+                if match.route is not None:
+                    await self._authenticate_route(match.route.definition, request)
         except Exception as exc:
             response = default_exception_response(exc, debug=self.config.debug)
             return self._finalize_response(response, request, context)
@@ -441,7 +472,7 @@ class App:
                 debug=self.config.debug,
             )
         else:
-            response = await self._compiled_router().dispatch(request)
+            response = await router.dispatch_match(request, match)
         return self._finalize_response(response, request, context)
 
     def _compiled_router(self) -> Router:
@@ -461,6 +492,15 @@ class App:
             raise MiddlewareStateError(
                 "Cannot register middleware after routes are compiled"
             )
+
+    async def _authenticate_route(
+        self,
+        route: RouteDefinition,
+        request: Request,
+    ) -> None:
+        if route.auth is None or request.auth is not None:
+            return
+        await authenticate_request(route.auth, request)
 
     def _finalize_response(
         self,

@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 from quater.typing import AuthContext, AuthRequest
 
 
@@ -24,9 +24,9 @@ async def test_mcp_uses_same_auth_denial_policy_as_http() -> None:
     async def authenticate(ctx: AuthRequest) -> AuthContext | None:
         return None
 
-    app = App(mcp_enabled=True, auth=authenticate)
+    app = Quater(mcp_enabled=True)
 
-    @app.get("/private", tool=True)
+    @app.get("/private", tool=True, auth=authenticate)
     async def private() -> dict[str, bool]:
         return {"ok": True}
 
@@ -46,9 +46,9 @@ async def test_auth_hook_sees_tool_source_for_tools_call() -> None:
         seen.append((ctx.context.source, ctx.context.tool_name))
         return AuthContext(subject="user_1")
 
-    app = App(mcp_enabled=True, auth=authenticate)
+    app = Quater(mcp_enabled=True)
 
-    @app.get("/me", tool=True)
+    @app.get("/me", tool=True, auth=authenticate)
     async def me(request: Request) -> dict[str, object]:
         assert request.auth is not None
         return {
@@ -78,13 +78,12 @@ async def test_invalid_mcp_origin_rejects_before_auth_and_handler() -> None:
         auth_calls += 1
         return AuthContext(subject="user_1")
 
-    app = App(
+    app = Quater(
         mcp_enabled=True,
         mcp_allowed_origins=["https://app.example.com"],
-        auth=authenticate,
     )
 
-    @app.get("/private", tool=True)
+    @app.get("/private", tool=True, auth=authenticate)
     async def private() -> dict[str, bool]:
         nonlocal handler_calls
         handler_calls += 1
@@ -109,7 +108,7 @@ async def test_invalid_mcp_origin_rejects_before_auth_and_handler() -> None:
 async def test_valid_mcp_origin_can_use_cors_origin_policy() -> None:
     from quater.cors import CORSConfig
 
-    app = App(
+    app = Quater(
         mcp_enabled=True,
         cors=CORSConfig(allowed_origins=("https://app.example.com",)),
     )

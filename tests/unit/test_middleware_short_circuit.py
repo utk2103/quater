@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App, Request, Response, TextResponse
+from quater import Quater, Request, Response, TextResponse
 
 
 @pytest.mark.asyncio
 async def test_before_middleware_short_circuits_handler_but_runs_after() -> None:
-    app = App()
+    app = Quater()
     events: list[str] = []
 
     @app.before_request

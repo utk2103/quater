@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 from quater.typing import AuthContext, AuthRequest
 
 
 @pytest.mark.asyncio
 async def test_allowed_host_accepts_matching_host_with_port() -> None:
-    app = App(allowed_hosts=["api.example.com"])
+    app = Quater(allowed_hosts=["api.example.com"])
 
     @app.get("/health")
     async def health() -> dict[str, bool]:
@@ -36,9 +36,9 @@ async def test_rejected_host_never_reaches_auth_or_handler() -> None:
         auth_calls += 1
         return AuthContext(subject="user_1")
 
-    app = App(auth=authenticate, allowed_hosts=["api.example.com"])
+    app = Quater(allowed_hosts=["api.example.com"])
 
-    @app.get("/private")
+    @app.get("/private", auth=authenticate)
     async def private() -> dict[str, bool]:
         nonlocal handler_calls
         handler_calls += 1
@@ -56,7 +56,7 @@ async def test_rejected_host_never_reaches_auth_or_handler() -> None:
 
 @pytest.mark.asyncio
 async def test_forwarded_host_is_honored_only_from_trusted_proxy() -> None:
-    app = App(
+    app = Quater(
         allowed_hosts=["api.example.com"],
         trusted_proxies=["10.0.0.0/8"],
     )

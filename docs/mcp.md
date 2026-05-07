@@ -6,9 +6,9 @@ normal HTTP APIs.
 ## Enable MCP
 
 ```python
-from quater import App
+from quater import Quater
 
-app = App(
+app = Quater(
     mcp_enabled=True,
     mcp_allowed_origins=["http://localhost:3000"],
 )
@@ -87,8 +87,16 @@ request.context.tool_name == "get_user"
 
 ## Auth
 
-MCP never bypasses auth. If `App(auth=...)` is configured, both `tools/list` and
-`tools/call` must authenticate through the same hook used by normal HTTP routes.
+MCP tool calls use the auth hook attached to the underlying route. A protected
+HTTP route stays protected when exposed as a tool, and a public route stays
+public.
+
+```python
+@app.get("/users/{id:int}", tool=True, auth=authenticate)
+async def get_user(id: int, request: Request) -> dict[str, object]:
+    assert request.auth is not None
+    return {"id": id, "subject": request.auth.subject}
+```
 
 ## Input Schemas
 
@@ -107,7 +115,7 @@ async def audit(event: ToolAuditEvent) -> None:
     print(event.tool_name, event.subject, event.success)
 
 
-app = App(mcp_enabled=True, mcp_audit=audit)
+app = Quater(mcp_enabled=True, mcp_audit=audit)
 ```
 
 Arguments are redacted before they reach the audit hook.

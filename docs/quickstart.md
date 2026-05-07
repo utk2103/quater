@@ -1,11 +1,11 @@
 # Quickstart
 
-Quater apps are built around one `App` object.
+Quater apps are built around one `Quater` object.
 
 ```python
-from quater import App, Request
+from quater import Quater, Request
 
-app = App()
+app = Quater()
 
 
 @app.get("/health")
@@ -26,7 +26,7 @@ uv run granian examples.basic_app:app.rsgi --interface rsgi
 
 RSGI is the primary path because it maps directly to Granian's fast Python
 interface. ASGI and WSGI are compatibility paths that still call the same
-`App.handle()` core.
+`Quater.handle()` core.
 
 ```bash
 uv run granian examples.asgi_compat:app.asgi --interface asgi

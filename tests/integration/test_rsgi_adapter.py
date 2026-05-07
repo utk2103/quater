@@ -7,9 +7,9 @@ from inspect import isawaitable
 import pytest
 
 from quater import (
-    App,
     BytesResponse,
     EmptyResponse,
+    Quater,
     Request,
     StreamResponse,
     TextResponse,
@@ -94,7 +94,7 @@ class FakeWebSocketProtocol:
         return (status or 1000, True)
 
 
-async def call_rsgi(app: App, path: str, protocol: FakeHTTPProtocol) -> None:
+async def call_rsgi(app: Quater, path: str, protocol: FakeHTTPProtocol) -> None:
     result = app.rsgi(FakeRSGIScope(path=path), protocol)
     assert isawaitable(result)
     await result
@@ -102,7 +102,7 @@ async def call_rsgi(app: App, path: str, protocol: FakeHTTPProtocol) -> None:
 
 @pytest.mark.asyncio
 async def test_rsgi_maps_common_response_shapes() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/json")
     async def json() -> dict[str, bool]:
@@ -141,7 +141,7 @@ async def test_rsgi_maps_common_response_shapes() -> None:
 
 @pytest.mark.asyncio
 async def test_rsgi_stream_response_uses_stream_transport() -> None:
-    app = App()
+    app = Quater()
 
     async def chunks() -> AsyncIterator[bytes]:
         yield b"a"
@@ -161,7 +161,7 @@ async def test_rsgi_stream_response_uses_stream_transport() -> None:
 
 @pytest.mark.asyncio
 async def test_rsgi_request_body_is_lazy_and_cached_by_request() -> None:
-    app = App()
+    app = Quater()
 
     @app.post("/echo")
     async def echo(request: Request) -> bytes:
@@ -180,7 +180,7 @@ async def test_rsgi_request_body_is_lazy_and_cached_by_request() -> None:
 
 
 def test_rsgi_websocket_scope_closes_without_router_dispatch() -> None:
-    app = App()
+    app = Quater()
     calls = 0
 
     @app.get("/ws")

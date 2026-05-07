@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from quater import App, AuthContext, AuthRequest, Request
+from quater import AuthContext, AuthRequest, Quater, Request
 from quater.tools.audit import ToolAuditEvent
 
 
@@ -18,15 +18,14 @@ async def audit_tool_call(event: ToolAuditEvent) -> None:
     return None
 
 
-app = App(
-    auth=authenticate,
+app = Quater(
     mcp_enabled=True,
     mcp_allowed_origins=["http://localhost:3000"],
     mcp_audit=audit_tool_call,
 )
 
 
-@app.get("/profile")
+@app.get("/profile", auth=authenticate)
 async def profile(request: Request) -> dict[str, object]:
     assert request.auth is not None
     return {
@@ -35,7 +34,7 @@ async def profile(request: Request) -> dict[str, object]:
     }
 
 
-@app.get("/users/{id:int}", tool=True)
+@app.get("/users/{id:int}", tool=True, auth=authenticate)
 async def get_user(id: int, request: Request) -> dict[str, object]:
     assert request.auth is not None
     return {

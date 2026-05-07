@@ -4,12 +4,12 @@ from collections.abc import Awaitable, Callable
 
 import pytest
 
-from quater import App, Request, Response
+from quater import Quater, Request, Response
 
 
 @pytest.mark.asyncio
 async def test_global_and_route_middleware_order_is_stable() -> None:
-    app = App()
+    app = Quater()
     events: list[str] = []
 
     @app.before_request
@@ -77,7 +77,7 @@ async def test_global_and_route_middleware_order_is_stable() -> None:
 
 @pytest.mark.asyncio
 async def test_after_middleware_can_replace_response() -> None:
-    app = App()
+    app = Quater()
 
     @app.after_response
     async def add_header(request: Request, response: Response) -> Response:
@@ -95,7 +95,7 @@ async def test_after_middleware_can_replace_response() -> None:
 
 @pytest.mark.asyncio
 async def test_global_after_middleware_runs_for_not_found_responses() -> None:
-    app = App()
+    app = Quater()
 
     @app.after_response
     async def add_header(request: Request, response: Response) -> Response:

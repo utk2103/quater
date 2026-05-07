@@ -21,13 +21,13 @@ Set `security="off"` only for controlled local or embedded use.
 Use `allowed_hosts` to reject unexpected Host headers:
 
 ```python
-app = App(allowed_hosts=["api.example.com"])
+app = Quater(allowed_hosts=["api.example.com"])
 ```
 
 Use `trusted_proxies` when Quater should honor forwarded host or scheme headers:
 
 ```python
-app = App(
+app = Quater(
     allowed_hosts=["api.example.com"],
     trusted_proxies=["10.0.0.0/8"],
 )
@@ -40,7 +40,7 @@ Forwarded headers are ignored unless the client IP matches a trusted proxy.
 `max_body_size` defaults to `2mb` and applies before JSON decoding:
 
 ```python
-app = App(max_body_size="2mb")
+app = Quater(max_body_size="2mb")
 ```
 
 If `Content-Length` is larger than the configured limit, Quater rejects the
@@ -48,11 +48,13 @@ request before reading the body stream.
 
 ## Auth
 
-Quater intentionally does not provide a full user system. It provides one
-central user-written auth hook:
+Quater intentionally does not provide a full user system. It accepts user-written
+auth hooks on individual routes:
 
 ```python
-from quater import AuthContext, AuthRequest
+from quater import Quater, AuthContext, AuthRequest, Request
+
+app = Quater()
 
 
 async def authenticate(ctx: AuthRequest) -> AuthContext | None:
@@ -60,10 +62,17 @@ async def authenticate(ctx: AuthRequest) -> AuthContext | None:
     if token != "Bearer demo-token":
         return None
     return AuthContext(subject="demo-user")
+
+
+@app.get("/me", auth=authenticate)
+async def me(request: Request) -> dict[str, str]:
+    assert request.auth is not None
+    return {"subject": request.auth.subject}
 ```
 
-When `auth` is configured, returning `None` rejects the request with `401`.
-The same hook protects normal API calls and MCP calls.
+When route `auth` is configured, returning `None` rejects the request with
+`401`. Routes without auth stay public. The same route hook protects normal API
+calls and MCP tool calls when the route is also exposed with `tool=True`.
 
 `AuthRequest.context.source` is `"api"` for normal route calls and `"tool"` for
 MCP `tools/call`.
@@ -75,7 +84,7 @@ Use `CORSConfig` for CORS response headers:
 ```python
 from quater.cors import CORSConfig
 
-app = App(
+app = Quater(
     cors=CORSConfig(
         allowed_origins=("https://app.example.com",),
         allow_credentials=True,
@@ -87,7 +96,7 @@ MCP origin validation uses `mcp_allowed_origins` first. If that is empty and
 CORS is configured, Quater uses the CORS allowed origins for MCP too.
 
 ```python
-app = App(
+app = Quater(
     mcp_enabled=True,
     mcp_allowed_origins=["https://app.example.com"],
 )

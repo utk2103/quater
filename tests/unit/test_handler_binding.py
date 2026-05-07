@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 from quater.response import Response, TextResponse
 from quater.typing import AuthContext
 
 
 @pytest.mark.asyncio
 async def test_path_params_are_converted_and_bound_by_name() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/users/{id:int}")
     async def get_user(id: int) -> dict[str, int]:
@@ -23,7 +23,7 @@ async def test_path_params_are_converted_and_bound_by_name() -> None:
 
 @pytest.mark.asyncio
 async def test_request_injection_uses_same_request_object() -> None:
-    app = App()
+    app = Quater()
     auth = AuthContext(subject="user_1")
 
     @app.get("/whoami")
@@ -39,7 +39,7 @@ async def test_request_injection_uses_same_request_object() -> None:
 
 @pytest.mark.asyncio
 async def test_handler_response_objects_pass_through_normalization() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/ready")
     async def ready() -> Response:
@@ -56,7 +56,7 @@ async def test_unsupported_handler_return_value_is_not_silently_serialized() -> 
     class Unsupported:
         pass
 
-    app = App()
+    app = Quater()
 
     @app.get("/bad")
     async def bad() -> Unsupported:

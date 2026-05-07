@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App, Request, Response
+from quater import Quater, Request, Response
 
 
 def response_headers(response: Response) -> dict[str, str]:
@@ -11,7 +11,7 @@ def response_headers(response: Response) -> dict[str, str]:
 
 @pytest.mark.asyncio
 async def test_secure_headers_are_added_to_not_found_responses() -> None:
-    response = await App().handle(Request(method="GET", path="/missing"))
+    response = await Quater().handle(Request(method="GET", path="/missing"))
 
     headers = response_headers(response)
     assert response.status_code == 404
@@ -22,7 +22,7 @@ async def test_secure_headers_are_added_to_not_found_responses() -> None:
 
 @pytest.mark.asyncio
 async def test_secure_headers_are_added_to_unexpected_error_responses() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/boom")
     async def boom() -> None:
@@ -39,7 +39,7 @@ async def test_secure_headers_are_added_to_unexpected_error_responses() -> None:
 
 @pytest.mark.asyncio
 async def test_hsts_uses_forwarded_proto_only_from_trusted_proxy() -> None:
-    app = App(trusted_proxies=["10.0.0.0/8"])
+    app = Quater(trusted_proxies=["10.0.0.0/8"])
 
     trusted_response = await app.handle(
         Request(
@@ -66,7 +66,9 @@ async def test_hsts_uses_forwarded_proto_only_from_trusted_proxy() -> None:
 
 @pytest.mark.asyncio
 async def test_security_can_be_disabled_for_local_or_embedded_usage() -> None:
-    response = await App(security="off").handle(Request(method="GET", path="/missing"))
+    response = await Quater(security="off").handle(
+        Request(method="GET", path="/missing")
+    )
 
     headers = response_headers(response)
     assert response.status_code == 404
@@ -76,7 +78,7 @@ async def test_security_can_be_disabled_for_local_or_embedded_usage() -> None:
 
 @pytest.mark.asyncio
 async def test_configured_csp_is_preserved_without_overriding_handler_header() -> None:
-    app = App(content_security_policy="default-src 'self'")
+    app = Quater(content_security_policy="default-src 'self'")
 
     @app.get("/custom")
     async def custom() -> dict[str, bool]:

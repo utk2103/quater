@@ -1,6 +1,6 @@
 """Public package surface for Quater."""
 
-from quater.app import App
+from quater.app import Quater
 from quater.exceptions import HTTPError
 from quater.request import Request
 from quater.response import (
@@ -17,13 +17,13 @@ from quater.typing import AuthContext, AuthRequest
 __version__ = "0.1.0"
 
 __all__ = [
-    "App",
     "AuthContext",
     "AuthRequest",
     "BytesResponse",
     "EmptyResponse",
     "HTTPError",
     "JSONResponse",
+    "Quater",
     "RedirectResponse",
     "Request",
     "Response",

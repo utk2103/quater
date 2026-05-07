@@ -9,7 +9,7 @@ import subprocess
 import sys
 
 import quater
-from quater import App, AuthContext, AuthRequest
+from quater import AuthContext, AuthRequest, Quater
 
 
 def test_package_imports_from_outside_source_tree_without_optional_eager_imports(
@@ -30,6 +30,7 @@ import quater
 
 print(json.dumps({
     "file": quater.__file__,
+    "has_quater": hasattr(quater, "Quater"),
     "has_app": hasattr(quater, "App"),
     "granian_eager": "granian" in sys.modules,
     "msgspec_eager": "msgspec" in sys.modules,
@@ -44,7 +45,8 @@ print(json.dumps({
     )
 
     payload = json.loads(result.stdout)
-    assert payload["has_app"] is True
+    assert payload["has_quater"] is True
+    assert payload["has_app"] is False
     assert pathlib.Path(payload["file"]).is_relative_to(src_path)
     assert payload["granian_eager"] is False
     assert payload["msgspec_eager"] is False
@@ -52,13 +54,13 @@ print(json.dumps({
 
 def test_public_exports_are_intentionally_small() -> None:
     assert quater.__all__ == [
-        "App",
         "AuthContext",
         "AuthRequest",
         "BytesResponse",
         "EmptyResponse",
         "HTTPError",
         "JSONResponse",
+        "Quater",
         "RedirectResponse",
         "Request",
         "Response",
@@ -66,7 +68,8 @@ def test_public_exports_are_intentionally_small() -> None:
         "TextResponse",
         "__version__",
     ]
-    assert quater.App is App
+    assert quater.Quater is Quater
+    assert not hasattr(quater, "App")
     assert quater.AuthContext is AuthContext
     assert quater.AuthRequest is AuthRequest
 

@@ -4,13 +4,13 @@ from typing import cast
 
 import pytest
 
-from quater import App
+from quater import Quater
 from quater.core import Handler
 from quater.exceptions import RouteBindingError, RouteConflictError
 
 
 def test_ambiguous_dynamic_route_shapes_are_rejected() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/users/{id}")
     async def by_id(id: str) -> dict[str, str]:
@@ -25,7 +25,7 @@ def test_ambiguous_dynamic_route_shapes_are_rejected() -> None:
 
 
 def test_duplicate_method_and_path_are_rejected() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/health")
     async def first() -> dict[str, bool]:
@@ -40,7 +40,7 @@ def test_duplicate_method_and_path_are_rejected() -> None:
 
 
 def test_dynamic_route_names_must_match_across_methods() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/users/{id:int}")
     async def get_user(id: int) -> dict[str, int]:
@@ -55,7 +55,7 @@ def test_dynamic_route_names_must_match_across_methods() -> None:
 
 
 def test_sync_handlers_are_rejected_at_compile_time() -> None:
-    app = App()
+    app = Quater()
 
     def sync_handler() -> dict[str, bool]:
         return {"ok": True}
@@ -67,7 +67,7 @@ def test_sync_handlers_are_rejected_at_compile_time() -> None:
 
 
 def test_invalid_route_paths_are_rejected_at_compile_time() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("missing-leading-slash")
     async def handler() -> dict[str, bool]:

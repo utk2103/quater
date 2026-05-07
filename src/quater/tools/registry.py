@@ -9,6 +9,7 @@ from types import UnionType
 from typing import Union, get_args, get_origin
 from urllib.parse import urlencode
 
+from quater.auth import authenticate_request
 from quater.core import RouteDefinition
 from quater.exceptions import BadRequestError, ConfigurationError
 from quater.params import BoundParameter, HandlerPlan, build_handler_plan
@@ -47,6 +48,9 @@ class ToolDefinition:
             max_body_size=request.max_body_size,
             context=RequestContext(source="tool", tool_name=self.name),
         )
+        if self.route.auth is not None:
+            await authenticate_request(self.route.auth, tool_request)
+            request.auth = tool_request.auth
         result = await self.handler_plan.call(tool_request, path_params)
         return normalize_response(result)
 

@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App
+from quater import Quater
 from quater.exceptions import ConfigurationError
 from quater.tools.registry import build_tool_registry
 
 
 def test_registry_exposes_only_routes_marked_as_tools() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/private")
     async def private() -> dict[str, bool]:
@@ -26,7 +26,7 @@ def test_registry_exposes_only_routes_marked_as_tools() -> None:
 
 
 def test_duplicate_tool_names_fail_when_registry_is_built() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/users/{id:int}", tool=True, name="lookup")
     async def lookup_user(id: int) -> dict[str, int]:
@@ -41,7 +41,7 @@ def test_duplicate_tool_names_fail_when_registry_is_built() -> None:
 
 
 def test_mcp_enabled_app_builds_tool_registry_during_route_compile() -> None:
-    app = App(mcp_enabled=True)
+    app = Quater(mcp_enabled=True)
 
     @app.get("/items/{id:int}", tool=True)
     async def get_item(id: int) -> dict[str, int]:

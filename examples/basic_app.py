@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from quater import App, Request
+from quater import Quater, Request
 
-app = App()
+app = Quater()
 
 
 @app.get("/health")

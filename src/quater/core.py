@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from typing import Any, TypeAlias
 
 from quater.middleware import MiddlewareStack
+from quater.typing import Authenticate
 
 Handler: TypeAlias = Callable[..., Awaitable[object]]
 
@@ -20,5 +21,6 @@ class RouteDefinition:
     handler: Handler
     name: str
     tool: bool = False
+    auth: Authenticate | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
     middleware: MiddlewareStack = field(default_factory=MiddlewareStack)

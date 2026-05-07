@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Awaitable, Callable
 from typing import assert_type
 
-from quater import App, Request, Response
+from quater import Quater, Request, Response
 
-app = App()
+app = Quater()
 
 
 @app.before_request

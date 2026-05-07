@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 from quater.tools.audit import ToolAuditEvent
 from quater.typing import AuthContext, AuthRequest
 
@@ -30,9 +30,9 @@ async def test_successful_tool_call_emits_sanitized_audit_event() -> None:
     async def authenticate(ctx: AuthRequest) -> AuthContext | None:
         return AuthContext(subject="user_1")
 
-    app = App(mcp_enabled=True, auth=authenticate, mcp_audit=audit)
+    app = Quater(mcp_enabled=True, mcp_audit=audit)
 
-    @app.get("/users/{id:int}", tool=True)
+    @app.get("/users/{id:int}", tool=True, auth=authenticate)
     async def get_user(id: int) -> dict[str, int]:
         return {"id": id}
 
@@ -56,7 +56,7 @@ async def test_failed_tool_call_emits_failure_audit_event() -> None:
     async def audit(event: ToolAuditEvent) -> None:
         events.append(event)
 
-    app = App(mcp_enabled=True, mcp_audit=audit)
+    app = Quater(mcp_enabled=True, mcp_audit=audit)
 
     @app.get("/boom", tool=True)
     async def boom() -> dict[str, bool]:

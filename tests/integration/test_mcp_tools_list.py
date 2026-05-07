@@ -4,11 +4,11 @@ import json
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 
 
 async def mcp_post(
-    app: App,
+    app: Quater,
     payload: dict[str, object],
 ) -> tuple[int, dict[str, object]]:
     response = await app.handle(
@@ -29,7 +29,7 @@ def require_object(value: object) -> dict[str, object]:
 
 @pytest.mark.asyncio
 async def test_tools_list_exposes_only_tool_routes() -> None:
-    app = App(mcp_enabled=True)
+    app = Quater(mcp_enabled=True)
 
     @app.get("/internal")
     async def internal() -> dict[str, bool]:
@@ -63,7 +63,7 @@ async def test_tools_list_exposes_only_tool_routes() -> None:
 
 @pytest.mark.asyncio
 async def test_mcp_path_is_not_available_until_enabled() -> None:
-    response = await App().handle(
+    response = await Quater().handle(
         Request(
             method="POST",
             path="/mcp",
@@ -77,7 +77,7 @@ async def test_mcp_path_is_not_available_until_enabled() -> None:
 
 @pytest.mark.asyncio
 async def test_mcp_get_returns_method_not_allowed_when_enabled() -> None:
-    response = await App(mcp_enabled=True).handle(Request(method="GET", path="/mcp"))
+    response = await Quater(mcp_enabled=True).handle(Request(method="GET", path="/mcp"))
 
     assert response.status_code == 405
     assert dict(response.headers)["allow"] == "POST"

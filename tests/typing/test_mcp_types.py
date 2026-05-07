@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import assert_type
 
-from quater import App
+from quater import Quater
 from quater.tools.audit import AuditHook, ToolAuditEvent
 from quater.tools.registry import ToolRegistry, build_tool_registry
 from quater.typing import AuthContext, AuthRequest, RequestContext
@@ -20,12 +20,18 @@ async def audit(event: ToolAuditEvent) -> None:
     assert_type(event.arguments["id"], object)
 
 
-app = App(
-    auth=authenticate,
+app = Quater(
     mcp_enabled=True,
     mcp_allowed_origins=["https://app.example.com"],
     mcp_audit=audit,
 )
+
+
+@app.get("/me", tool=True, auth=authenticate)
+async def me() -> dict[str, bool]:
+    return {"ok": True}
+
+
 registry = build_tool_registry(app.routes)
 
 assert_type(app.mcp_audit, AuditHook | None)

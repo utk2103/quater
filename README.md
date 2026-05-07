@@ -22,9 +22,9 @@ uv build
 ## Quickstart
 
 ```python
-from quater import App, Request
+from quater import Quater, Request
 
-app = App()
+app = Quater()
 
 
 @app.get("/health")
@@ -71,11 +71,12 @@ Common return values become responses:
 
 ## Auth
 
-Quater has one central auth hook. When configured, every request must return an
-`AuthContext`; returning `None` produces `401 Unauthorized`.
+Auth is configured per route. A public route has no auth hook; a protected route
+passes an auth hook to the route decorator. Returning `None` produces
+`401 Unauthorized`.
 
 ```python
-from quater import App, AuthContext, AuthRequest
+from quater import Quater, AuthContext, AuthRequest, Request
 
 
 async def authenticate(ctx: AuthRequest) -> AuthContext | None:
@@ -85,7 +86,24 @@ async def authenticate(ctx: AuthRequest) -> AuthContext | None:
     return AuthContext(subject="demo-user")
 
 
-app = App(auth=authenticate)
+app = Quater()
+
+
+@app.get("/me", auth=authenticate)
+async def me(request: Request) -> dict[str, str]:
+    assert request.auth is not None
+    return {"subject": request.auth.subject}
+```
+
+## Request Logging
+
+Quater emits access logs through the `quater.access` logger at `INFO`. Configure
+Python logging in your app or server process to see them:
+
+```python
+import logging
+
+logging.basicConfig(level=logging.INFO)
 ```
 
 ## MCP Tools
@@ -94,7 +112,7 @@ Routes are normal APIs by default. A route becomes visible to MCP only when
 registered with `tool=True`.
 
 ```python
-@app.get("/users/{id:int}", tool=True)
+@app.get("/users/{id:int}", tool=True, auth=authenticate)
 async def get_user(id: int, request: Request) -> dict[str, object]:
     return {
         "id": id,
@@ -120,15 +138,15 @@ request.context.tool_name == "get_user"
 Enable MCP with:
 
 ```python
-app = App(
-    auth=authenticate,
+app = Quater(
     mcp_enabled=True,
     mcp_allowed_origins=["http://localhost:3000"],
 )
 ```
 
 MVP MCP support includes `POST /mcp`, JSON-RPC `tools/list`, and JSON-RPC
-`tools/call`. SSE streaming, resumability, sessions, prompts, resources, stdio,
-and server-to-client notifications are intentionally deferred.
+`tools/call`. Tool calls execute the auth hook attached to the underlying route.
+SSE streaming, resumability, sessions, prompts, resources, stdio, and
+server-to-client notifications are intentionally deferred.
 
 More detail lives in `docs/quickstart.md`, `docs/security.md`, and `docs/mcp.md`.

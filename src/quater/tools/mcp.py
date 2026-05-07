@@ -7,7 +7,7 @@ from collections.abc import Mapping
 from typing import cast
 
 from quater.config import AppConfig
-from quater.exceptions import BadRequestError, RequestJSONError
+from quater.exceptions import BadRequestError, HTTPError, RequestJSONError
 from quater.request import Request
 from quater.response import JSONResponse, Response, StreamResponse, TextResponse
 from quater.serialization import loads_json
@@ -135,6 +135,16 @@ async def _handle_tools_call(
             start=start,
         )
         return _json_rpc_error(request_id, -32602, exc.detail)
+    except HTTPError as exc:
+        await _audit(
+            audit_hook,
+            request,
+            name,
+            arguments,
+            success=False,
+            start=start,
+        )
+        return TextResponse(exc.detail, status_code=exc.status_code)
     except Exception as exc:
         await _audit(
             audit_hook,

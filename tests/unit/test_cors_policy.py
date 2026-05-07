@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 from quater.cors import CORSConfig
 from quater.exceptions import ConfigurationError
 
 
 @pytest.mark.asyncio
 async def test_allowed_origin_receives_cors_headers_and_vary_origin() -> None:
-    app = App(
+    app = Quater(
         cors=CORSConfig(
             allowed_origins=("https://app.example.com",),
             allow_credentials=True,
@@ -38,7 +38,7 @@ async def test_allowed_origin_receives_cors_headers_and_vary_origin() -> None:
 
 @pytest.mark.asyncio
 async def test_disallowed_origin_does_not_receive_cors_headers() -> None:
-    app = App(cors=CORSConfig(allowed_origins=("https://app.example.com",)))
+    app = Quater(cors=CORSConfig(allowed_origins=("https://app.example.com",)))
 
     @app.get("/items")
     async def items() -> dict[str, bool]:
@@ -57,7 +57,7 @@ async def test_disallowed_origin_does_not_receive_cors_headers() -> None:
 
 @pytest.mark.asyncio
 async def test_preflight_response_includes_requested_method_and_headers() -> None:
-    app = App(
+    app = Quater(
         cors=CORSConfig(
             allowed_origins=("https://app.example.com",),
             allowed_headers=("authorization",),

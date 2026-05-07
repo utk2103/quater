@@ -4,12 +4,12 @@ import inspect
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 
 
 @pytest.mark.asyncio
 async def test_static_routes_win_before_dynamic_routes() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/users/{id:int}")
     async def get_user(id: int) -> dict[str, int]:
@@ -27,7 +27,7 @@ async def test_static_routes_win_before_dynamic_routes() -> None:
 
 @pytest.mark.asyncio
 async def test_typed_path_param_rejection_does_not_call_handler() -> None:
-    app = App()
+    app = Quater()
     calls = 0
 
     @app.get("/users/{id:int}")
@@ -44,7 +44,7 @@ async def test_typed_path_param_rejection_does_not_call_handler() -> None:
 
 @pytest.mark.asyncio
 async def test_method_not_allowed_lists_supported_methods() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/items/{id:int}")
     async def get_item(id: int) -> dict[str, int]:
@@ -67,7 +67,7 @@ async def test_method_not_allowed_lists_supported_methods() -> None:
 async def test_no_runtime_signature_inspection_after_compile(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/health")
     async def health() -> dict[str, bool]:

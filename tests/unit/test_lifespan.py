@@ -2,13 +2,13 @@ from __future__ import annotations
 
 import pytest
 
-from quater import App
+from quater import Quater
 from quater.exceptions import LifespanStateError
 
 
 @pytest.mark.asyncio
 async def test_lifespan_hooks_are_ordered_and_idempotent() -> None:
-    app = App()
+    app = Quater()
     events: list[str] = []
 
     @app.on_startup
@@ -45,7 +45,7 @@ async def test_startup_failure_stops_later_hooks_and_never_runs_shutdown() -> No
     class StartupFailed(Exception):
         pass
 
-    app = App()
+    app = Quater()
     events: list[str] = []
 
     @app.on_startup
@@ -78,7 +78,7 @@ async def test_startup_failure_stops_later_hooks_and_never_runs_shutdown() -> No
 
 @pytest.mark.asyncio
 async def test_lifespan_hooks_cannot_be_registered_after_startup_begins() -> None:
-    app = App()
+    app = Quater()
 
     @app.on_startup
     async def startup() -> None:

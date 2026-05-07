@@ -5,7 +5,7 @@ from typing import cast
 
 import pytest
 
-from quater import App, Request
+from quater import Quater, Request
 from quater.adapters.wsgi import WSGIEnvironment
 
 
@@ -20,7 +20,7 @@ class CountingInput(BytesIO):
 
 
 def call_wsgi(
-    app: App,
+    app: Quater,
     environ: WSGIEnvironment,
 ) -> tuple[str, list[tuple[str, str]], bytes]:
     captured: dict[str, object] = {}
@@ -68,7 +68,7 @@ def base_environ(
 
 
 def test_wsgi_route_response_maps_status_headers_and_body() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/hello")
     async def hello() -> dict[str, str]:
@@ -84,7 +84,7 @@ def test_wsgi_route_response_maps_status_headers_and_body() -> None:
 
 
 def test_wsgi_input_stream_is_read_once_by_handler() -> None:
-    app = App()
+    app = Quater()
     stream = CountingInput(b"abc")
     environ = base_environ(method="POST", path="/echo", body=b"abc")
     environ["wsgi.input"] = stream
@@ -104,7 +104,7 @@ def test_wsgi_input_stream_is_read_once_by_handler() -> None:
 
 
 def test_wsgi_body_limit_uses_content_length_before_stream_read() -> None:
-    app = App(max_body_size=2)
+    app = Quater(max_body_size=2)
     stream = CountingInput(b"abc")
     environ = base_environ(method="POST", path="/echo", body=b"abc")
     environ["wsgi.input"] = stream
@@ -122,7 +122,7 @@ def test_wsgi_body_limit_uses_content_length_before_stream_read() -> None:
 
 @pytest.mark.asyncio
 async def test_wsgi_can_be_called_from_an_existing_event_loop() -> None:
-    app = App()
+    app = Quater()
 
     @app.get("/hello")
     async def hello() -> str:
