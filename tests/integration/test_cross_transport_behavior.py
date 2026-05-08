@@ -178,6 +178,93 @@ async def rsgi_response(
     return protocol.status, dict(protocol.headers), protocol.body
 
 
+def test_adapter_properties_are_cached_per_app_instance() -> None:
+    app = Quater()
+
+    assert app.asgi is app.asgi
+    assert app.rsgi is app.rsgi
+    assert app.__rsgi__ is app.rsgi
+    assert app.wsgi is app.wsgi
+
+
+@pytest.mark.asyncio
+async def test_app_object_is_callable_for_all_http_transports() -> None:
+    app = make_app([], [])
+
+    asgi_sent: list[dict[str, object]] = []
+
+    async def receive() -> ASGIMessage:
+        return {"type": "http.request", "body": b"", "more_body": False}
+
+    async def send(message: Mapping[str, Any]) -> None:
+        asgi_sent.append(dict(message))
+
+    await app(
+        {
+            "type": "http",
+            "method": "GET",
+            "path": "/me",
+            "scheme": "http",
+            "query_string": b"",
+            "headers": [(b"host", b"api.example.com"), (b"authorization", b"asgi")],
+            "client": ("127.0.0.1", 5000),
+        },
+        receive,
+        send,
+    )
+    asgi_start = next(
+        message for message in asgi_sent if message["type"] == "http.response.start"
+    )
+
+    wsgi_captured: dict[str, object] = {}
+
+    def start_response(
+        status: str,
+        headers: list[tuple[str, str]],
+        exc_info: object | None = None,
+    ) -> object:
+        wsgi_captured["status"] = status
+        wsgi_captured["headers"] = headers
+        return None
+
+    wsgi_body = b"".join(
+        app(
+            {
+                "REQUEST_METHOD": "GET",
+                "PATH_INFO": "/me",
+                "QUERY_STRING": "",
+                "SERVER_NAME": "api.example.com",
+                "SERVER_PORT": "80",
+                "SERVER_PROTOCOL": "HTTP/1.1",
+                "HTTP_HOST": "api.example.com",
+                "HTTP_AUTHORIZATION": "wsgi",
+                "wsgi.input": BytesIO(b""),
+                "wsgi.url_scheme": "http",
+                "REMOTE_ADDR": "127.0.0.1",
+            },
+            start_response,
+        )
+    )
+
+    protocol = RSGIProtocol()
+    rsgi_result = app(
+        RSGIScope(
+            method="GET",
+            path="/me",
+            headers=[("host", "api.example.com"), ("authorization", "rsgi")],
+        ),
+        protocol,
+    )
+    assert isawaitable(rsgi_result)
+    await rsgi_result
+
+    assert asgi_start["status"] == 200
+    assert str(wsgi_captured["status"]).startswith("200 ")
+    assert wsgi_body == b'{"subject":"wsgi"}'
+    assert protocol.status == 200
+    assert protocol.body == b'{"subject":"rsgi"}'
+
+
 def make_app(auth_subjects: list[str], handler_calls: list[str]) -> Quater:
     async def authenticate(ctx: AuthRequest) -> AuthContext | None:
         subject = ctx.headers.get("authorization")

@@ -21,7 +21,7 @@ async def echo(request: Request) -> dict[str, object]:
 Run with Granian RSGI:
 
 ```bash
-uv run granian examples.basic_app:app.rsgi --interface rsgi
+uv run granian examples.basic_app:app --interface rsgi
 ```
 
 RSGI is the primary path because it maps directly to Granian's fast Python
@@ -29,8 +29,8 @@ interface. ASGI and WSGI are compatibility paths that still call the same
 `Quater.handle()` core.
 
 ```bash
-uv run granian examples.asgi_compat:app.asgi --interface asgi
-uv run granian examples.wsgi_compat:app.wsgi --interface wsgi
+uv run granian examples.asgi_compat:app --interface asgi
+uv run granian examples.wsgi_compat:app --interface wsgi
 ```
 
 ## Binding
@@ -65,7 +65,8 @@ Handlers can return plain values or response objects:
 
 ## Adapters
 
-Every adapter builds the same transport-neutral `Request`:
+The `Quater` object is directly callable by Granian for every HTTP interface.
+Adapter properties are also available when a server wants an explicit callable:
 
 - `app.rsgi` for Granian RSGI.
 - `app.asgi` for ASGI 3.0 compatibility and ASGI lifespan.

@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from collections.abc import Callable, Iterable
-from typing import TYPE_CHECKING, Any, TypeVar
+from collections.abc import Awaitable, Callable, Iterable
+from typing import TYPE_CHECKING, Any, TypeVar, cast, overload
 
 from quater.auth import authenticate_request
 from quater.config import AppConfig, MaxBodySize, SecurityMode
@@ -34,9 +34,15 @@ from quater.typing import Authenticate, LifespanHook
 HandlerT = TypeVar("HandlerT", bound=Handler)
 
 if TYPE_CHECKING:
-    from quater.adapters.asgi import ASGIAdapter
-    from quater.adapters.rsgi import RSGIAdapter
-    from quater.adapters.wsgi import WSGIAdapter
+    from quater.adapters.asgi import ASGIAdapter, ASGIReceive, ASGIScope, ASGISend
+    from quater.adapters.rsgi import (
+        RSGIAdapter,
+        RSGICallbackResult,
+        RSGIHTTPProtocol,
+        RSGIScope,
+        RSGIWebSocketProtocol,
+    )
+    from quater.adapters.wsgi import StartResponse, WSGIAdapter, WSGIEnvironment
     from quater.tools.audit import AuditHook
     from quater.tools.registry import ToolRegistry
 
@@ -48,12 +54,15 @@ class Quater:
         "config",
         "mcp_audit",
         "name",
+        "_asgi_adapter",
         "_lifespan",
         "_middleware",
+        "_rsgi_adapter",
         "_router",
         "_routes",
         "_routes_dirty",
         "_tool_registry",
+        "_wsgi_adapter",
     )
 
     def __init__(
@@ -87,11 +96,14 @@ class Quater:
             mcp_allowed_origins=mcp_allowed_origins,
         )
         self.mcp_audit = mcp_audit
+        self._asgi_adapter: ASGIAdapter | None = None
         self._lifespan = LifespanManager()
         self._middleware = MiddlewareStack()
+        self._rsgi_adapter: RSGIAdapter | None = None
         self._routes: list[RouteDefinition] = []
         self._router: Router | None = None
         self._tool_registry: ToolRegistry | None = None
+        self._wsgi_adapter: WSGIAdapter | None = None
         self._routes_dirty = True
 
     @property
@@ -102,25 +114,89 @@ class Quater:
 
     @property
     def asgi(self) -> ASGIAdapter:
-        from quater.adapters.asgi import ASGIAdapter
+        adapter = self._asgi_adapter
+        if adapter is None:
+            from quater.adapters.asgi import ASGIAdapter
 
-        return ASGIAdapter(self)
+            adapter = ASGIAdapter(self)
+            self._asgi_adapter = adapter
+        return adapter
 
     @property
     def rsgi(self) -> RSGIAdapter:
-        from quater.adapters.rsgi import RSGIAdapter
+        adapter = self._rsgi_adapter
+        if adapter is None:
+            from quater.adapters.rsgi import RSGIAdapter
 
-        return RSGIAdapter(self)
+            adapter = RSGIAdapter(self)
+            self._rsgi_adapter = adapter
+        return adapter
 
     @property
     def wsgi(self) -> WSGIAdapter:
-        from quater.adapters.wsgi import WSGIAdapter
+        adapter = self._wsgi_adapter
+        if adapter is None:
+            from quater.adapters.wsgi import WSGIAdapter
 
-        return WSGIAdapter(self)
+            adapter = WSGIAdapter(self)
+            self._wsgi_adapter = adapter
+        return adapter
 
     @property
     def __rsgi__(self) -> RSGIAdapter:
         return self.rsgi
+
+    @overload
+    def __call__(
+        self,
+        scope: ASGIScope,
+        receive: ASGIReceive,
+        send: ASGISend,
+        /,
+    ) -> Awaitable[None]: ...
+
+    @overload
+    def __call__(
+        self,
+        environ: WSGIEnvironment,
+        start_response: StartResponse,
+        /,
+    ) -> Iterable[bytes]: ...
+
+    @overload
+    def __call__(
+        self,
+        scope: RSGIScope,
+        protocol: RSGIHTTPProtocol | RSGIWebSocketProtocol,
+        /,
+    ) -> RSGICallbackResult: ...
+
+    def __call__(
+        self,
+        scope_or_environ: object,
+        receive_or_start_response_or_protocol: object,
+        send: object | None = None,
+        /,
+    ) -> object:
+        if send is not None:
+            return self.asgi(
+                cast("ASGIScope", scope_or_environ),
+                cast("ASGIReceive", receive_or_start_response_or_protocol),
+                cast("ASGISend", send),
+            )
+
+        if isinstance(scope_or_environ, dict):
+            return self.wsgi(
+                cast("WSGIEnvironment", scope_or_environ),
+                cast("StartResponse", receive_or_start_response_or_protocol),
+            )
+        return self.rsgi(
+            cast("RSGIScope", scope_or_environ),
+            cast(
+                "RSGIHTTPProtocol | RSGIWebSocketProtocol",
+                receive_or_start_response_or_protocol,
+            ),
+        )
 
     def add_route(
         self,

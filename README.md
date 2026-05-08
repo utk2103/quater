@@ -40,14 +40,14 @@ async def echo(request: Request) -> dict[str, object]:
 Run the RSGI fast path with Granian:
 
 ```bash
-uv run granian examples.basic_app:app.rsgi --interface rsgi
+uv run granian examples.basic_app:app --interface rsgi
 ```
 
 Compatibility adapters are available for ASGI and WSGI:
 
 ```bash
-uv run granian examples.asgi_compat:app.asgi --interface asgi
-uv run granian examples.wsgi_compat:app.wsgi --interface wsgi
+uv run granian examples.asgi_compat:app --interface asgi
+uv run granian examples.wsgi_compat:app --interface wsgi
 ```
 
 ## Route Handlers
@@ -102,7 +102,7 @@ request lines from Uvicorn rather than from FastAPI itself. With Granian, enable
 server access logs explicitly:
 
 ```bash
-uv run granian examples.basic_app:app.rsgi --interface rsgi --access-log
+uv run granian examples.basic_app:app --interface rsgi --access-log
 ```
 
 ## MCP Tools
