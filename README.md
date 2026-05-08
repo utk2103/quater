@@ -156,9 +156,10 @@ app = Quater(
 )
 ```
 
-MVP MCP support includes `POST /mcp`, JSON-RPC `tools/list`, and JSON-RPC
-`tools/call`. Tool calls execute the auth hook attached to the underlying route.
-SSE streaming, resumability, sessions, prompts, resources, stdio, and
-server-to-client notifications are intentionally deferred.
+MVP MCP support includes `POST /mcp`, JSON-RPC `initialize`,
+`notifications/initialized`, `tools/list`, and `tools/call`. Tool calls execute
+the auth hook attached to the underlying route. SSE streaming, resumability,
+sessions, prompts, resources, stdio, and server-to-client notifications are
+intentionally deferred.
 
 More detail lives in `docs/quickstart.md`, `docs/security.md`, and `docs/mcp.md`.

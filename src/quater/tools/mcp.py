@@ -9,12 +9,24 @@ from typing import cast
 from quater.config import AppConfig
 from quater.exceptions import BadRequestError, HTTPError, RequestJSONError
 from quater.request import Request
-from quater.response import JSONResponse, Response, StreamResponse, TextResponse
+from quater.response import (
+    EmptyResponse,
+    JSONResponse,
+    Response,
+    StreamResponse,
+    TextResponse,
+)
 from quater.tools.audit import AuditHook, ToolAuditEvent, sanitize_arguments
 from quater.tools.registry import ToolRegistry
 from quater.typing import RequestContext
 
 JSONRPC_VERSION = "2.0"
+MCP_PROTOCOL_VERSION_HEADER = "mcp-protocol-version"
+SUPPORTED_PROTOCOL_VERSIONS = ("2025-11-25", "2025-06-18", "2025-03-26")
+LATEST_PROTOCOL_VERSION = SUPPORTED_PROTOCOL_VERSIONS[0]
+
+_REQUEST_METHODS = frozenset({"initialize", "tools/list", "tools/call"})
+_NOTIFICATION_METHODS = frozenset({"notifications/initialized"})
 
 
 async def mcp_request_context(request: Request) -> RequestContext:
@@ -66,16 +78,36 @@ async def handle_mcp_request(
             status_code=405,
             headers={"allow": "POST"},
         )
+    protocol_error = _validate_protocol_version_header(request)
+    if protocol_error is not None:
+        return protocol_error
 
     try:
         payload = await _json_rpc_payload(request)
     except _JSONRPCError as exc:
         return _json_rpc_error(exc.request_id, exc.code, exc.message)
-    request_id = payload.get("id")
+
     method = payload.get("method")
     if payload.get("jsonrpc") != JSONRPC_VERSION or not isinstance(method, str):
-        return _json_rpc_error(request_id, -32600, "Invalid Request")
+        return _json_rpc_error(payload.get("id"), -32600, "Invalid Request")
 
+    if "id" not in payload:
+        if method in _NOTIFICATION_METHODS:
+            return EmptyResponse(status_code=202)
+        if method in _REQUEST_METHODS:
+            return _json_rpc_error(None, -32600, "Invalid Request")
+        return EmptyResponse(status_code=202)
+
+    request_id = payload.get("id")
+    if not _is_request_id(request_id):
+        return _json_rpc_error(None, -32600, "Invalid Request")
+
+    if method == "initialize":
+        try:
+            result = _initialize_result(payload.get("params"))
+        except _JSONRPCError as exc:
+            return _json_rpc_error(request_id, exc.code, exc.message)
+        return _json_rpc_result(request_id, result)
     if method == "tools/list":
         return _json_rpc_result(request_id, {"tools": registry.list_tools()})
     if method == "tools/call":
@@ -98,6 +130,58 @@ async def _json_rpc_payload(request: Request) -> Mapping[str, object]:
     if not isinstance(payload, Mapping):
         raise _JSONRPCError(None, -32600, "Invalid Request")
     return cast(Mapping[str, object], payload)
+
+
+def _validate_protocol_version_header(request: Request) -> Response | None:
+    value = request.headers.get(MCP_PROTOCOL_VERSION_HEADER)
+    if value is None or value in SUPPORTED_PROTOCOL_VERSIONS:
+        return None
+    return TextResponse("Unsupported MCP protocol version", status_code=400)
+
+
+def _is_request_id(value: object) -> bool:
+    if isinstance(value, bool):
+        return False
+    return isinstance(value, str | int)
+
+
+def _initialize_result(params: object) -> dict[str, object]:
+    if not isinstance(params, Mapping):
+        raise _JSONRPCError(None, -32602, "Invalid params")
+
+    requested_version = params.get("protocolVersion")
+    client_capabilities = params.get("capabilities")
+    client_info = params.get("clientInfo")
+    if (
+        not isinstance(requested_version, str)
+        or not isinstance(client_capabilities, Mapping)
+        or not isinstance(client_info, Mapping)
+        or not isinstance(client_info.get("name"), str)
+        or not isinstance(client_info.get("version"), str)
+    ):
+        raise _JSONRPCError(None, -32602, "Invalid params")
+
+    return {
+        "protocolVersion": _negotiate_protocol_version(requested_version),
+        "capabilities": {"tools": {}},
+        "serverInfo": _server_info(),
+    }
+
+
+def _negotiate_protocol_version(requested_version: str) -> str:
+    if requested_version in SUPPORTED_PROTOCOL_VERSIONS:
+        return requested_version
+    return LATEST_PROTOCOL_VERSION
+
+
+def _server_info() -> dict[str, str]:
+    from quater import __version__
+
+    return {
+        "name": "quater",
+        "title": "Quater",
+        "version": __version__,
+    }
 
 
 async def _handle_tools_call(

@@ -45,6 +45,31 @@ It also appears in MCP discovery:
 }
 ```
 
+## Client Lifecycle
+
+MCP clients start with `initialize`:
+
+```json
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-06-18",
+    "capabilities": {},
+    "clientInfo": {"name": "my-client", "version": "1.0.0"}
+  }
+}
+```
+
+Quater responds with the negotiated protocol version, server metadata, and the
+tool capability. After that, clients may send `notifications/initialized`.
+Quater accepts that notification without a response body, then the client can
+use `tools/list` and `tools/call`.
+
+For later requests, clients may include `MCP-Protocol-Version`. Unsupported
+protocol version headers are rejected with `400 Bad Request`.
+
 Tool calls use JSON-RPC:
 
 ```json
@@ -132,10 +157,13 @@ Arguments are redacted before they reach the audit hook.
 
 - `POST /mcp`
 - JSON-RPC request/response
+- `initialize`
+- `notifications/initialized`
 - `tools/list`
 - `tools/call`
 - auth parity with HTTP
 - origin validation
+- protocol version header validation
 - audit hook support
 
 ## Deferred
