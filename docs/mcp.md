@@ -1,7 +1,9 @@
 # MCP
 
-Quater exposes selected routes as MCP tools through the same app that serves
-normal HTTP APIs.
+Quater can expose selected HTTP routes as MCP tools.
+
+The route stays a normal API. MCP is another way to call it. That is the design:
+one handler, one auth rule, one validation path.
 
 ## Configure MCP
 
@@ -14,12 +16,14 @@ app = Quater(
 )
 ```
 
-The JSON-RPC endpoint defaults to `/mcp`. The human-readable MCP tool docs
-default to `/mcp/docs`. Set `mcp_docs_path=None` to disable the docs UI.
+The JSON-RPC endpoint is fixed at `POST /mcp`.
+
+The docs page defaults to `/mcp/docs`. Set `mcp_docs_path=None` to turn off the
+human page. The MCP endpoint itself stays available.
 
 ## Expose A Tool
 
-Routes are not tools unless they opt in and define a description:
+Routes are not tools unless they opt in:
 
 ```python
 @app.get("/users/{id:int}", tool=True, description="Fetch one user by id.")
@@ -27,10 +31,11 @@ async def get_user(id: int) -> dict[str, int]:
     return {"id": id}
 ```
 
-If `description=` is not set, Quater uses the handler docstring. Tool routes
-without either one fail when the route is registered.
+Descriptions are required. Use `description=` or a handler docstring. This is
+not decoration for humans only. It is the text an agent sees in `tools/list`, so
+it needs to say what the tool is for.
 
-The route still works as a normal API:
+This still works as HTTP:
 
 ```text
 GET /users/123
@@ -48,7 +53,7 @@ It also appears in MCP discovery:
 
 ## Client Lifecycle
 
-MCP clients start with `initialize`:
+Clients start with `initialize`:
 
 ```json
 {
@@ -63,15 +68,13 @@ MCP clients start with `initialize`:
 }
 ```
 
-Quater responds with the negotiated protocol version, server metadata, and the
-tool capability. After that, clients may send `notifications/initialized`.
-Quater accepts that notification without a response body, then the client can
-use `tools/list` and `tools/call`.
+Quater responds with the negotiated protocol version, server metadata, and tool
+capability. After that, clients may send `notifications/initialized`.
 
 For later requests, clients may include `MCP-Protocol-Version`. Unsupported
-protocol version headers are rejected with `400 Bad Request`.
+versions are rejected with `400 Bad Request`.
 
-Tool calls use JSON-RPC:
+Tool calls look like this:
 
 ```json
 {
@@ -87,10 +90,12 @@ Tool calls use JSON-RPC:
 
 ## Request Context
 
-The same handler can be reached through HTTP or MCP. Use
-`request.context.source` to distinguish the current invocation:
+The same handler can tell how it was called.
 
 ```python
+from quater import Request
+
+
 @app.get("/users/{id:int}", tool=True, description="Fetch one user by id.")
 async def get_user(id: int, request: Request) -> dict[str, object]:
     return {
@@ -116,9 +121,7 @@ request.context.tool_name == "get_user"
 
 ## Auth
 
-MCP tool calls use the auth hook attached to the underlying route. A protected
-HTTP route stays protected when exposed as a tool, and a public route stays
-public.
+MCP tool calls use the auth hook attached to the route.
 
 ```python
 @app.get(
@@ -132,31 +135,32 @@ async def get_user(id: int, request: Request) -> dict[str, object]:
     return {"id": id, "subject": request.auth.subject}
 ```
 
-## Input Schemas
+A protected HTTP route stays protected when exposed as a tool. A public route
+stays public. No second auth system hiding off to the side.
+
+## Input And Output Docs
 
 Quater generates `inputSchema` from path parameters, query parameters, and one
 JSON body parameter. Required fields follow the handler signature and body model.
 
-## Tool Docs
+`GET /mcp/docs` shows the same tool data in a human page:
 
-`tools/list` is the machine-readable tool catalog for MCP clients. For humans,
-Quater also serves `GET /mcp/docs` by default when MCP is enabled. The page is
-rendered from the same `ToolRegistry` data as `tools/list`, so tool names,
-descriptions, input schemas, auth visibility, and example `tools/call` payloads
-stay in sync.
+- tool name
+- description
+- auth marker
+- HTTP route
+- pretty JSON input schema
+- pretty JSON output schema when the return annotation is useful
+- example `tools/call` request
 
-Disable or move it with:
-
-```python
-app = Quater(mcp_docs_path=None)
-```
+That page is for developers. MCP clients should use `tools/list`.
 
 ## Auditing
 
 Pass `mcp_audit` to receive sanitized tool-call events:
 
 ```python
-from quater.tools.audit import ToolAuditEvent
+from quater import ToolAuditEvent
 
 
 async def audit(event: ToolAuditEvent) -> None:
@@ -166,7 +170,7 @@ async def audit(event: ToolAuditEvent) -> None:
 app = Quater(mcp_audit=audit)
 ```
 
-Arguments are redacted before they reach the audit hook.
+Arguments are redacted before they reach the hook.
 
 ## Implemented Now
 
@@ -182,7 +186,7 @@ Arguments are redacted before they reach the audit hook.
 - protocol version header validation
 - audit hook support
 
-## Deferred
+## Not Yet
 
 - SSE streaming
 - resumability

@@ -4,8 +4,7 @@ import json
 
 import pytest
 
-from quater import Quater, Request
-from quater.tools.audit import ToolAuditEvent
+from quater import Quater, Request, ToolAuditEvent
 from quater.typing import AuthContext, AuthRequest
 
 

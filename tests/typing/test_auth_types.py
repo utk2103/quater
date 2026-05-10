@@ -3,9 +3,7 @@ from __future__ import annotations
 from collections.abc import Mapping
 from typing import assert_type
 
-from quater import Quater, Request
-from quater.cookies import SignedCookieSigner
-from quater.cors import CORSConfig
+from quater import CORSConfig, Quater, Request, SignedCookieSigner
 from quater.typing import AuthContext, Authenticate, AuthRequest
 
 
@@ -31,6 +29,8 @@ app = Quater(
 async def me(request: Request) -> dict[str, str]:
     assert request.auth is not None
     return {"subject": request.auth.subject}
+
+
 request = Request(
     method="GET",
     path="/me",

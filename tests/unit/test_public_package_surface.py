@@ -9,7 +9,15 @@ import subprocess
 import sys
 
 import quater
-from quater import AuthContext, AuthRequest, Quater
+from quater import (
+    AppConfig,
+    AuthContext,
+    AuthRequest,
+    CORSConfig,
+    Quater,
+    SignedCookieSigner,
+    ToolAuditEvent,
+)
 
 
 def test_package_imports_from_outside_source_tree_without_optional_eager_imports(
@@ -56,9 +64,11 @@ print(json.dumps({
 
 def test_public_exports_are_intentionally_small() -> None:
     assert quater.__all__ == [
+        "AppConfig",
         "AuthContext",
         "AuthRequest",
         "BytesResponse",
+        "CORSConfig",
         "EmptyResponse",
         "HTTPError",
         "HTMLResponse",
@@ -67,14 +77,20 @@ def test_public_exports_are_intentionally_small() -> None:
         "RedirectResponse",
         "Request",
         "Response",
+        "SignedCookieSigner",
         "StreamResponse",
         "TextResponse",
+        "ToolAuditEvent",
         "__version__",
     ]
     assert quater.Quater is Quater
     assert not hasattr(quater, "App")
     assert quater.AuthContext is AuthContext
     assert quater.AuthRequest is AuthRequest
+    assert quater.AppConfig is AppConfig
+    assert quater.CORSConfig is CORSConfig
+    assert quater.SignedCookieSigner is SignedCookieSigner
+    assert quater.ToolAuditEvent is ToolAuditEvent
 
 
 def test_version_uses_pep440_compatible_shape() -> None:

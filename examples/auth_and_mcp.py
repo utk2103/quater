@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from quater import AuthContext, AuthRequest, Quater, Request
-from quater.tools.audit import ToolAuditEvent
+from quater import AuthContext, AuthRequest, Quater, Request, ToolAuditEvent
 
 
 async def authenticate(ctx: AuthRequest) -> AuthContext | None:

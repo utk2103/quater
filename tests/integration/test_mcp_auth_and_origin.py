@@ -4,7 +4,7 @@ import json
 
 import pytest
 
-from quater import Quater, Request
+from quater import CORSConfig, Quater, Request
 from quater.typing import AuthContext, AuthRequest
 
 
@@ -113,8 +113,6 @@ async def test_invalid_mcp_origin_rejects_before_auth_and_handler() -> None:
 
 @pytest.mark.asyncio
 async def test_valid_mcp_origin_can_use_cors_origin_policy() -> None:
-    from quater.cors import CORSConfig
-
     app = Quater(cors=CORSConfig(allowed_origins=("https://app.example.com",)))
 
     @app.get("/ping", tool=True, description="Check tool connectivity.")

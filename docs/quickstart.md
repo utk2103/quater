@@ -1,6 +1,6 @@
 # Quickstart
 
-Quater apps are built around one `Quater` object.
+Start with one object.
 
 ```python
 from quater import Quater, Request
@@ -18,40 +18,44 @@ async def echo(request: Request) -> dict[str, object]:
     return {"received": await request.json()}
 ```
 
-Run with Granian RSGI:
+Run it:
 
 ```bash
 uv run granian examples.basic_app:app --interface rsgi
 ```
 
-Use hot reload while building locally:
+Reload while editing:
 
 ```bash
 uv run granian examples.basic_app:app --interface rsgi --reload
 ```
 
-OpenAPI documentation is generated automatically:
+Request logs come from Granian:
 
-- `GET /docs` serves the HTML docs.
-- `GET /openapi.json` serves the OpenAPI JSON document.
+```bash
+uv run granian examples.basic_app:app --interface rsgi --access-log
+```
 
-Set a docs path or OpenAPI path to `None` to disable that endpoint:
+## Generated Docs
+
+Quater serves docs by default:
+
+- `/docs` for Swagger UI.
+- `/openapi.json` for OpenAPI.
+- `/mcp/docs` for exposed MCP tools.
+
+Set a path to `None` to turn that page off:
 
 ```python
 app = Quater(
-    docs_path="/docs",
-    openapi_path="/openapi.json",
+    docs_path=None,
+    openapi_path=None,
+    mcp_docs_path=None,
 )
 ```
 
-RSGI is the primary path because it maps directly to Granian's fast Python
-interface. ASGI and WSGI are compatibility paths that still call the same
-`Quater.handle()` core.
-
-```bash
-uv run granian examples.asgi_compat:app --interface asgi
-uv run granian examples.wsgi_compat:app --interface wsgi
-```
+If `docs_path` is enabled, `openapi_path` must also be enabled. Swagger UI needs
+the JSON document to render anything useful.
 
 ## Binding
 
@@ -71,7 +75,22 @@ async def search(q: str, page: int = 1) -> dict[str, object]:
     return {"q": q, "page": page}
 ```
 
-Complex parameters come from the JSON body.
+Complex parameters come from the JSON body. `msgspec.Struct` is the best fit when
+you care about speed and typed input.
+
+```python
+import msgspec
+
+
+class UserIn(msgspec.Struct):
+    name: str
+    age: int
+
+
+@app.post("/users")
+async def create_user(user: UserIn) -> dict[str, object]:
+    return {"name": user.name, "age": user.age}
+```
 
 ## Responses
 
@@ -85,12 +104,25 @@ Handlers can return plain values or response objects:
 
 ## Adapters
 
-The `Quater` object is directly callable by Granian for every HTTP interface.
-Adapter properties are also available when a server wants an explicit callable:
+RSGI is the primary path because it maps directly to Granian's fast Python
+interface.
 
-- `app.rsgi` for Granian RSGI.
-- `app.asgi` for ASGI 3.0 compatibility and ASGI lifespan.
-- `app.wsgi` for WSGI compatibility.
+```bash
+uv run granian examples.basic_app:app --interface rsgi
+```
 
-WebSocket transports are explicitly rejected for now. Quater does not expose a
-framework-level WebSocket API in the MVP.
+ASGI and WSGI use the same `Quater.handle()` core:
+
+```bash
+uv run granian examples.asgi_compat:app --interface asgi
+uv run granian examples.wsgi_compat:app --interface wsgi
+```
+
+You can also pass the explicit adapter if a server wants it:
+
+- `app.rsgi`
+- `app.asgi`
+- `app.wsgi`
+
+WebSocket scopes are rejected for now. Quater does not expose a framework-level
+WebSocket API in the MVP.

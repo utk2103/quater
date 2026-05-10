@@ -3,13 +3,14 @@
 Quater is a typed Python API framework for APIs that humans use and agents can
 safely operate.
 
-It keeps one application pipeline for normal HTTP routes and MCP tools:
-security, auth, middleware, routing, handler binding, serialization, and error
-handling all run through the same core.
+The important bit is boring in the best way: HTTP calls and tool calls use the
+same route, auth hook, middleware, body parser, error handling, and response
+serialization. If `/users/{id:int}` is protected for a browser or CLI client, the
+same protection applies when an agent calls it as a tool.
 
-## Install For Development
+## Working On Quater
 
-Use `uv` for local development:
+This repo uses `uv`.
 
 ```bash
 uv sync --group dev
@@ -19,7 +20,7 @@ uv run ruff check .
 uv build
 ```
 
-## Quickstart
+## Small App
 
 ```python
 from quater import Quater, Request
@@ -37,43 +38,59 @@ async def echo(request: Request) -> dict[str, object]:
     return {"received": await request.json()}
 ```
 
-Run the RSGI fast path with Granian:
+Run it with Granian on the RSGI path:
 
 ```bash
 uv run granian examples.basic_app:app --interface rsgi
 ```
 
-During local backend development, enable Granian's file watcher:
+Use reload while building locally:
 
 ```bash
 uv run granian examples.basic_app:app --interface rsgi --reload
 ```
 
-Compatibility adapters are available for ASGI and WSGI:
+Turn on request logs at the server:
+
+```bash
+uv run granian examples.basic_app:app --interface rsgi --access-log
+```
+
+ASGI and WSGI are there for compatibility:
 
 ```bash
 uv run granian examples.asgi_compat:app --interface asgi
 uv run granian examples.wsgi_compat:app --interface wsgi
 ```
 
-OpenAPI documentation is enabled by default:
+## Docs Endpoints
 
-- `GET /docs` shows the human-readable API docs.
-- `GET /openapi.json` returns the OpenAPI JSON document.
+These are on by default:
 
-Configure or disable it with:
+- `GET /docs` serves Swagger UI.
+- `GET /openapi.json` serves the OpenAPI document.
+- `GET /mcp/docs` shows the MCP tools you exposed.
+
+Move or disable them with paths:
 
 ```python
 app = Quater(
     docs_path="/docs",
     openapi_path="/openapi.json",
+    mcp_docs_path="/mcp/docs",
+)
+
+private_app = Quater(
+    docs_path=None,
+    openapi_path=None,
+    mcp_docs_path=None,
 )
 ```
 
-## Route Handlers
+## Handlers
 
 Handlers are async functions. Quater binds path params, simple query params,
-JSON body models, and `Request` automatically.
+JSON body models, and `Request`.
 
 ```python
 @app.get("/users/{id:int}")
@@ -81,32 +98,29 @@ async def get_user(id: int, include_email: bool = False) -> dict[str, object]:
     return {"id": id, "include_email": include_email}
 ```
 
-Common return values become responses:
+Return plain Python values or response objects:
 
 - `dict`, `list`, dataclasses, and `msgspec.Struct` values become JSON.
-- `str` becomes a text response.
-- `bytes` becomes a byte response.
-- `None` becomes an empty `204` response.
-- `Response` subclasses are returned as-is.
+- `str` becomes text.
+- `bytes` becomes bytes.
+- `None` becomes `204 No Content`.
+- `Response` subclasses are returned directly.
 
 ## Auth
 
-Auth is configured per route. A public route has no auth hook; a protected route
-passes an auth hook to the route decorator. Returning `None` produces
-`401 Unauthorized`.
+Auth is per route. Public routes have no auth hook. Protected routes pass one to
+the decorator. Returning `None` means `401 Unauthorized`.
 
 ```python
-from quater import Quater, AuthContext, AuthRequest, Request
+from quater import AuthContext, AuthRequest, Quater, Request
+
+app = Quater()
 
 
 async def authenticate(ctx: AuthRequest) -> AuthContext | None:
-    token = ctx.headers.get("authorization")
-    if token != "Bearer demo-token":
+    if ctx.headers.get("authorization") != "Bearer demo-token":
         return None
     return AuthContext(subject="demo-user")
-
-
-app = Quater()
 
 
 @app.get("/me", auth=authenticate)
@@ -115,22 +129,9 @@ async def me(request: Request) -> dict[str, str]:
     return {"subject": request.auth.subject}
 ```
 
-## Access Logs
-
-Quater leaves request access logging to the server, matching how FastAPI gets
-request lines from Uvicorn rather than from FastAPI itself. With Granian, enable
-server access logs explicitly:
-
-```bash
-uv run granian examples.basic_app:app --interface rsgi --access-log
-```
-
 ## MCP Tools
 
-Routes are normal APIs by default. A route becomes visible to MCP only when
-registered with `tool=True`. Tool routes must define a description, either with
-`description=` or a handler docstring, so `tools/list` gives agents useful
-intent metadata.
+Routes are normal HTTP routes unless you opt in with `tool=True`.
 
 ```python
 @app.get(
@@ -147,7 +148,10 @@ async def get_user(id: int, request: Request) -> dict[str, object]:
     }
 ```
 
-Normal HTTP calls see:
+Descriptions are required for tools. Use `description=` or a handler docstring.
+Agents need real intent metadata. A name like `get_user` is not enough.
+
+HTTP calls see:
 
 ```python
 request.context.source == "api"
@@ -161,7 +165,8 @@ request.context.source == "tool"
 request.context.tool_name == "get_user"
 ```
 
-MCP is available at `/mcp` by default:
+MCP lives at `POST /mcp`. The endpoint is fixed. Configure the human docs page
+and browser origins separately:
 
 ```python
 app = Quater(
@@ -170,11 +175,34 @@ app = Quater(
 )
 ```
 
-MVP MCP support includes `POST /mcp`, JSON-RPC `initialize`,
-`notifications/initialized`, `tools/list`, and `tools/call`. Tool calls execute
-the auth hook attached to the underlying route. `GET /mcp/docs` shows a
-human-readable view of the exposed tools when MCP is enabled. SSE streaming,
-resumability, sessions, prompts, resources, stdio, and server-to-client
-notifications are intentionally deferred.
+Current MCP support: `initialize`, `notifications/initialized`, `tools/list`,
+and `tools/call`.
 
-More detail lives in `docs/quickstart.md`, `docs/security.md`, and `docs/mcp.md`.
+Not in the MVP yet: SSE streaming, sessions, resumability, prompts, resources,
+stdio, and server-to-client notifications.
+
+## Public API
+
+Common app code should import from `quater`:
+
+```python
+from quater import (
+    AppConfig,
+    AuthContext,
+    AuthRequest,
+    CORSConfig,
+    Quater,
+    Request,
+    SignedCookieSigner,
+    ToolAuditEvent,
+)
+```
+
+The frozen surface is listed in [docs/api.md](docs/api.md).
+
+More detail:
+
+- [Quickstart](docs/quickstart.md)
+- [Public API](docs/api.md)
+- [Security](docs/security.md)
+- [MCP](docs/mcp.md)

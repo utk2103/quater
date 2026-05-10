@@ -98,7 +98,7 @@ class Quater:
         openapi_path: str | None | _Unset = _UNSET,
     ) -> None:
         self.name = name
-        self.config = (config or AppConfig()).with_overrides(
+        self.config = (config or AppConfig())._with_overrides(
             debug=debug,
             security=security,
             allowed_hosts=allowed_hosts,

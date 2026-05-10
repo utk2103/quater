@@ -73,7 +73,7 @@ class AppConfig:
             raise ConfigurationError("docs_path requires openapi_path")
         self._validate_reserved_paths()
 
-    def with_overrides(
+    def _with_overrides(
         self,
         *,
         debug: bool | None = None,
@@ -88,7 +88,7 @@ class AppConfig:
         mcp_docs_path: str | None | _Unset = _UNSET,
         mcp_allowed_origins: Iterable[str] | None = None,
     ) -> AppConfig:
-        """Return a new config with explicit overrides applied."""
+        """Return a new config with explicit constructor overrides applied."""
 
         return replace(
             self,

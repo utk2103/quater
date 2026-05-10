@@ -1,6 +1,9 @@
 """Public package surface for Quater."""
 
 from quater.app import Quater
+from quater.config import AppConfig
+from quater.cookies import SignedCookieSigner
+from quater.cors import CORSConfig
 from quater.exceptions import HTTPError
 from quater.request import Request
 from quater.response import (
@@ -13,14 +16,17 @@ from quater.response import (
     StreamResponse,
     TextResponse,
 )
+from quater.tools.audit import ToolAuditEvent
 from quater.typing import AuthContext, AuthRequest
 
 __version__ = "0.1.0"
 
 __all__ = [
+    "AppConfig",
     "AuthContext",
     "AuthRequest",
     "BytesResponse",
+    "CORSConfig",
     "EmptyResponse",
     "HTTPError",
     "HTMLResponse",
@@ -29,7 +35,9 @@ __all__ = [
     "RedirectResponse",
     "Request",
     "Response",
+    "SignedCookieSigner",
     "StreamResponse",
     "TextResponse",
+    "ToolAuditEvent",
     "__version__",
 ]

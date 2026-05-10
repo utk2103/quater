@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from typing import assert_type
 
-from quater import Quater
-from quater.tools.audit import AuditHook, ToolAuditEvent
+from quater import Quater, ToolAuditEvent
+from quater.tools.audit import AuditHook
 from quater.tools.registry import ToolRegistry, build_tool_registry
 from quater.typing import AuthContext, AuthRequest, RequestContext
 
