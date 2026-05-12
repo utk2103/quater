@@ -21,31 +21,8 @@ schemas stay tied to the route.
 
 Request flow:
 
-```mermaid
-flowchart TB
-    caller["caller: human / service / AI"]
-    hosted["hosted HTTP requests"]
-    adapter["RSGI / ASGI / WSGI"]
-    http["HTTP route"]
-    mcp["MCP tool"]
-    action["CLI action"]
-    surface_auth["surface auth"]
-    route_auth["route auth"]
-    bind["bind inputs"]
-    view["view handler"]
+<img width="1400" height="1524" alt="diagram" src="https://github.com/user-attachments/assets/e229e10d-6883-4601-ba4e-100a24e6ed19" />
 
-    caller --> hosted
-    hosted --> adapter
-    adapter --> http
-    adapter --> mcp
-    adapter --> action
-    http --> route_auth
-    mcp --> surface_auth
-    action --> surface_auth
-    surface_auth --> route_auth
-    route_auth --> bind
-    bind --> view
-```
 
 ## What Quater Focuses On
 
