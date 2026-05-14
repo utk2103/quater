@@ -2,15 +2,12 @@
 layout: home
 
 hero:
-  text: Backends for people, services, and AI agents.
-  tagline: Build normal Python APIs, then expose selected backend operations directly to agents and operators without creating shadow code paths.
+  text: Backends for people, MCP clients, and AI agents.
+  tagline: A Python backend framework for the agent era. Build applications for humans, and expose safe backend operations for AI agents via MCP and CLI.
   actions:
     - theme: brand
       text: Start Building
       link: /en/latest/quickstart
-    - theme: alt
-      text: Public API
-      link: /en/latest/api
 
 features:
   - title: Built for the next caller
