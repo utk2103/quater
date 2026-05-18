@@ -192,6 +192,53 @@ version you test with.
   Quater is built around.
 - [Manual](docs/en/latest/index.md): read the full guide and reference.
 
+## Agent Skills
+
+Quater ships two agent skills:
+
+- `quater-apps`: for operating applications built with Quater through MCP, CLI actions, and
+  HTTP.
+- `quater-framework`: for building and debugging applications with Quater.
+
+Install the app-operator skill for Codex:
+
+```bash
+npx -y skills add \
+  https://github.com/DevilsAutumn/quater/tree/main/agent-skills/quater-apps \
+  -a codex
+```
+
+Install the framework-development skill for Codex:
+
+```bash
+npx -y skills add \
+  https://github.com/DevilsAutumn/quater/tree/main/agent-skills/quater-framework \
+  -a codex
+```
+
+Use a different `-a` value for a different agent:
+
+```bash
+npx -y skills add \
+  https://github.com/DevilsAutumn/quater/tree/main/agent-skills/quater-apps \
+  -a claude-code
+```
+
+You can repeat `-a` to install into more than one agent:
+
+```bash
+npx -y skills add \
+  https://github.com/DevilsAutumn/quater/tree/main/agent-skills/quater-apps \
+  -a codex \
+  -a claude-code \
+  -a cursor
+```
+
+Common agent identifiers include `codex`, `claude-code`, `cursor`,
+`github-copilot`, `gemini-cli`, `windsurf`, `opencode`, `cline`, `roo`, `amp`,
+and `antigravity`. If you omit `-a`, the installer will try to detect the
+available agents on your machine.
+
 ## Working On Quater
 
 This repo uses [uv](https://docs.astral.sh/uv/) for local development:
