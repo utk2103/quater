@@ -294,9 +294,15 @@ def parse_size(value: MaxBodySize, *, field_name: str) -> int:
     if not normalized:
         raise ConfigurationError(f"{field_name} must not be empty")
 
-    digits = "".join(char for char in normalized if char.isdigit())
-    unit = normalized[len(digits) :].strip()
-    if not digits or unit not in _SIZE_UNITS:
+    digit_count = 0
+    for char in normalized:
+        if not char.isdigit():
+            break
+        digit_count += 1
+
+    digits = normalized[:digit_count]
+    unit = normalized[digit_count:]
+    if not digits or any(char.isspace() for char in unit) or unit not in _SIZE_UNITS:
         allowed = ", ".join(sorted(_SIZE_UNITS))
         raise ConfigurationError(
             f"{field_name} must be bytes or a string like '2mb' ({allowed})"

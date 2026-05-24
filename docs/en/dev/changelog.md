@@ -34,6 +34,7 @@ production-facing config, and adapter response safety.
 - Changed tool and action registry access to compile dirty routes once and keep
   the HTTP router current.
 - Removed duplicate request security-context resolution from the HTTP hot path.
+- Changed size-string parsing to reject whitespace between the number and unit.
 
 ## 0.1.0a1
 

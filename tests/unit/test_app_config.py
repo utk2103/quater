@@ -251,10 +251,19 @@ def test_invalid_environment_limit_settings_fail_early(
         Quater()
 
 
-@pytest.mark.parametrize("value", ["", "2", "mb", "2tb", "-1mb"])
+@pytest.mark.parametrize(
+    "value",
+    ["", "2", "mb", "2tb", "-1mb", "1 mb", "1  mb", "1\tmb"],
+)
 def test_invalid_body_size_strings_fail_early(value: str) -> None:
     with pytest.raises(ConfigurationError):
         Quater(max_body_size=value)
+
+
+def test_size_strings_allow_outer_whitespace_and_uppercase_units() -> None:
+    app = Quater(max_body_size=" 2MB ")
+
+    assert app.config.max_body_size == 2 * 1024 * 1024
 
 
 @pytest.mark.parametrize(
