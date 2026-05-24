@@ -6,14 +6,25 @@ an operator command.
 
 ## Prerequisites
 
-You need Python 3.11 or newer and [uv](https://docs.astral.sh/uv/) installed.
-The examples use `main.py` in an empty directory.
+You need Python 3.11 or newer. The examples use `main.py` in an empty
+directory.
 
 The example is intentionally small, but it shows the reason Quater exists: the
 same backend work should not need one implementation for the app, another for
 agents, and another for internal operations.
 
 ## Install
+
+```bash
+mkdir quater-demo
+cd quater-demo
+
+python -m venv .venv
+source .venv/bin/activate
+python -m pip install quater
+```
+
+If you use [uv](https://docs.astral.sh/uv/):
 
 ```bash
 uv init quater-demo
@@ -65,7 +76,7 @@ async def get_order(order_id: str, request: Request) -> dict[str, object]:
 Run it:
 
 ```bash
-uv run quater dev main.py
+quater dev main.py
 ```
 
 Expected output:
@@ -118,9 +129,9 @@ Local CLI calls import the app in process. They do not need a running server.
 ```bash
 export QUATER_APP=main:app
 export QUATER_TOKEN=demo-token
-uv run quater actions list
-uv run quater actions describe get_order
-uv run quater call get_order --order-id ord_1001
+quater actions list
+quater actions describe get_order
+quater call get_order --order-id ord_1001
 ```
 
 Expected action list:
@@ -254,9 +265,9 @@ ASGI when a platform expects an ASGI callable. Use WSGI only for compatibility
 with older hosting stacks.
 
 ```bash
-uv run quater dev main.py --interface rsgi
-uv run quater dev main.py --interface asgi
-uv run quater dev main.py --interface wsgi
+quater dev main.py --interface rsgi
+quater dev main.py --interface asgi
+quater dev main.py --interface wsgi
 ```
 
 Quater rejects WebSocket scopes today. It has no framework-level WebSocket API

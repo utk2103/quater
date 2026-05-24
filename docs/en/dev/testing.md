@@ -6,13 +6,15 @@ lifespan hooks, and MCP tools without starting a server.
 ## Prerequisites
 
 Install the test dependencies for your app. The examples use
-[pytest-asyncio](https://pytest-asyncio.readthedocs.io/) and run with
-[uv](https://docs.astral.sh/uv/).
+[pytest-asyncio](https://pytest-asyncio.readthedocs.io/).
 
 ```bash
-uv add --dev pytest pytest-asyncio
-uv run pytest
+python -m pip install pytest pytest-asyncio
+pytest
 ```
+
+If your app uses [uv](https://docs.astral.sh/uv/), use `uv add --dev pytest
+pytest-asyncio` and `uv run pytest` instead.
 
 ## TestClient Is Not A Mock
 

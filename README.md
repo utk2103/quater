@@ -103,9 +103,12 @@ async def get_order(order_id: str, request: Request) -> dict[str, object]:
 Run it:
 
 ```bash
-uv add quater
+python -m pip install quater
 quater dev main.py
 ```
+
+If you use [uv](https://docs.astral.sh/uv/), install with `uv add quater`
+instead.
 
 Expected server output:
 

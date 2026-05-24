@@ -78,8 +78,11 @@ Quater release notes live in [Changelog / Release Notes](/en/dev/changelog).
 While the project is pre-release, pin the exact version you test:
 
 ```bash
-uv add "quater==0.1.0a1"
+python -m pip install "quater==0.1.0a1"
 ```
+
+If you use [uv](https://docs.astral.sh/uv/), pin with
+`uv add "quater==0.1.0a1"` instead.
 
 When a release contains a breaking change, the release note should include a
 before-and-after snippet.

@@ -211,7 +211,8 @@ headers, and their surface auth hooks.
 : Local action commands require import syntax like `main:app`.
 
 `Granian is required to run Quater applications`
-: Install Quater with server dependencies or install Granian in the environment.
+: Install Quater with `python -m pip install quater`, or install Granian in the
+  environment if you are wiring the server manually.
 
 `Application failed to start`
 : Read the nested framework error. Quater wraps startup configuration failures
