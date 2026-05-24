@@ -1151,7 +1151,7 @@ class Quater:
         route: RouteDefinition,
         request: Request,
     ) -> None:
-        if route.auth is None or request.auth is not None:
+        if route.auth is None:
             return
         await authenticate_request(route.auth, request)
 

@@ -27,6 +27,7 @@ production-facing config, and adapter response safety.
   response bodies, status codes, and stream chunks fail safely.
 - Changed ASGI request body reads to reject client disconnects instead of
   passing partial request bodies to handlers.
+- Changed route auth to run even when a request already has an auth context.
 
 ## 0.1.0a1
 

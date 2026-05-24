@@ -59,6 +59,38 @@ async def test_missing_auth_context_denies_request_before_handler() -> None:
 
 
 @pytest.mark.asyncio
+async def test_route_auth_runs_even_when_request_auth_is_already_set() -> None:
+    auth_calls = 0
+    handler_calls = 0
+
+    async def authenticate(ctx: AuthRequest) -> AuthContext | None:
+        nonlocal auth_calls
+        auth_calls += 1
+        return None
+
+    app = Quater()
+
+    @app.get("/private", auth=authenticate)
+    async def private() -> dict[str, bool]:
+        nonlocal handler_calls
+        handler_calls += 1
+        return {"ok": True}
+
+    response = await app.handle(
+        Request(
+            method="GET",
+            path="/private",
+            auth=AuthContext(subject="preset"),
+        )
+    )
+
+    assert response.status_code == 401
+    assert response.body == b"Unauthorized"
+    assert auth_calls == 1
+    assert handler_calls == 0
+
+
+@pytest.mark.asyncio
 async def test_auth_hook_errors_do_not_leak_authorization_values() -> None:
     secret_token = "secret-token"
 
