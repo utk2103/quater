@@ -42,6 +42,14 @@ behind a large dependency graph. It focuses on the parts this new backend model
 needs: typed handlers, explicit auth boundaries, AI-readable metadata,
 operator-friendly actions, generated docs, and a small request path.
 
+## Highlights
+
+- One view serves HTTP, MCP, and CLI. You annotate the route once and all three entry points share the same logic, auth, and validation.
+- Exposing a view to AI agents takes a single flag. No extra service, no separate schema file, no adapter to maintain.
+- Security is on by default. Host checking, CORS, body limits, and request IDs run without you touching configuration.
+- Every request carries source and entrypoint metadata, so audit logs always know weather a human or an AI agent used your backend and how it arrived.
+- It gives slightly better performance than FastAPI for real workloads, with no measurable overhead when database I/O dominates.
+- Its simple to use, with a small API surface and no extra configuration required.
 
 ## A Small App
 
