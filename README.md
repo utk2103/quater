@@ -37,11 +37,6 @@ three different pieces of code.
 The goal is simple: make the backend usable by humans and operable by AI agents,
 without losing safety, structure, or ownership of the application logic.
 
-Quater is not trying to replace Django/FastAPI/Flask, ship an ORM, or hide your architecture
-behind a large dependency graph. It focuses on the parts this new backend model
-needs: typed handlers, explicit auth boundaries, AI-readable metadata,
-operator-friendly actions, generated docs, and a small request path.
-
 ## Highlights
 
 - One view serves HTTP, MCP, and CLI. You annotate the route once and all three entry points share the same logic, auth, and validation.
